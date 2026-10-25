@@ -1,0 +1,661 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12"><title>Compagnon Pêche V2</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0b0d12;--card:rgba(255,255,255,.06);--line:rgba(255,255,255,.12);--tx:#f2f4f8;--mut:#9aa3b2;--red:#ff3b4e;--vio:#7a5cff;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--tx);font-family:Inter,system-ui,sans-serif}
+body{background:radial-gradient(120% 60% at 80% 100%,rgba(230,235,245,.28),transparent 60%),radial-gradient(90% 50% at 0% 70%,rgba(255,59,78,.28),transparent 60%),radial-gradient(80% 40% at 0% 85%,rgba(122,92,255,.22),transparent 60%),linear-gradient(180deg,#14171e 0%,#2a2f39 45%,#0b0d12 100%);background-attachment:fixed}
+.app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;padding:20px 20px 28px;display:flex;flex-direction:column}
+h1,h2,.num{font-family:Rajdhani,Impact,sans-serif;text-transform:uppercase;letter-spacing:.04em;margin:0}
+.screen{display:none;flex:1;flex-direction:column;animation:in .35s ease}.screen.on{display:flex}
+@keyframes in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.home{justify-content:flex-end;gap:14px;padding-bottom:20px}
+.home h1{font-size:56px;line-height:.9;font-weight:700}.home h1 span{color:var(--red);text-shadow:0 0 24px rgba(255,59,78,.7)}
+.home p{color:var(--mut);margin:0 0 14px;line-height:1.5}
+.btn{border:0;border-radius:14px;padding:17px 20px;font:700 19px Rajdhani,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:linear-gradient(100deg,var(--red),#c2185b 60%,var(--vio));box-shadow:0 0 28px rgba(255,59,78,.45);width:100%;cursor:pointer}
+.btn:active{transform:scale(.98)}.btn.ghost{background:var(--card);box-shadow:none;border:1px solid var(--line);color:var(--tx)}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.back{background:var(--card);border:1px solid var(--line);color:var(--tx);width:40px;height:40px;border-radius:12px;font-size:20px;cursor:pointer}
+.bar{flex:1;display:flex;gap:5px}.bar i{flex:1;height:4px;border-radius:3px;background:var(--line)}.bar i.d{background:var(--red);box-shadow:0 0 8px var(--red)}
+.q small{color:var(--red);font:600 14px Rajdhani;letter-spacing:.2em;text-transform:uppercase}
+.q h2{font-size:34px;margin:4px 0 20px;font-weight:700}
+.opts{display:grid;gap:12px}
+.opt{display:flex;align-items:center;gap:14px;text-align:left;background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);color:var(--tx);border-radius:16px;padding:16px;font:500 16px Inter;cursor:pointer;transition:.15s}
+.opt .ic{font-size:26px;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.08);flex:none}
+.opt b{display:block;font:700 20px Rajdhani;letter-spacing:.03em}.opt span.s{color:var(--mut);font-size:13px}
+.opt.sel{border-color:var(--red);box-shadow:0 0 20px rgba(255,59,78,.4);background:rgba(255,59,78,.14)}
+input{width:100%;background:var(--card);border:1px solid var(--line);color:var(--tx);border-radius:14px;padding:18px;font:600 20px Rajdhani;letter-spacing:.04em}
+input:focus{outline:0;border-color:var(--red);box-shadow:0 0 18px rgba(255,59,78,.35)}
+.foot{margin-top:auto;padding-top:22px}.hide{display:none}
+.recap{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 18px}.chip{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:6px 12px;font-size:13px;color:var(--mut)}
+.res h2{font-size:30px}.res .sub{color:var(--mut);font-size:14px;margin-top:2px}
+.hero{margin:16px 0 12px;padding:20px;border-radius:20px;border:1px solid rgba(255,59,78,.5);background:linear-gradient(135deg,rgba(255,59,78,.22),rgba(122,92,255,.16));box-shadow:0 0 30px rgba(255,59,78,.25)}
+.hero small,.cell small{color:var(--mut);font:600 13px Rajdhani;letter-spacing:.18em;text-transform:uppercase}
+.hero .num{font-size:44px;font-weight:700;line-height:1}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cell{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.cell .num{font-size:25px;font-weight:700;margin-top:4px}.cell.w{grid-column:1/-1}
+.note{margin-top:12px;font-size:13px;color:#ffc46b;background:rgba(255,196,107,.1);border:1px solid rgba(255,196,107,.3);border-radius:12px;padding:10px 12px}
+.acts{display:grid;gap:10px;margin-top:20px}
+
+.btn.alt{background:linear-gradient(100deg,#2b6cff,var(--vio) 60%,#c2185b);box-shadow:0 0 28px rgba(122,92,255,.45)}
+.home .row{display:grid;gap:12px}
+.opts.two{grid-template-columns:1fr 1fr}.opts.two .opt{padding:12px;gap:0;justify-content:center;text-align:center}.opts.two .opt b{font-size:18px}.opts.two .ic{display:none}
+.opts.dir{grid-template-columns:repeat(4,1fr)}.opts.dir .opt{padding:14px 0;justify-content:center}.opts.dir .opt b{font-size:22px}.opts.dir .ic{display:none}
+textarea{width:100%;min-height:160px;resize:none;background:var(--card);border:1px solid var(--line);color:var(--tx);border-radius:14px;padding:16px;font:500 16px Inter}
+textarea:focus{outline:0;border-color:var(--red)}
+#modal{position:fixed;inset:0;z-index:50;display:none;place-items:center;padding:24px;background:rgba(5,6,10,.75);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#modal.on{display:grid}.mbox{max-width:380px;width:100%;background:#171a22;border:1px solid rgba(122,92,255,.6);border-radius:22px;padding:26px;box-shadow:0 0 40px rgba(122,92,255,.4);text-align:center}
+.mbox .ic{font-size:44px}.mbox h2{font-size:28px;margin:8px 0}.mbox p{color:var(--mut);line-height:1.5;margin:0 0 20px}
+.snap{margin:14px 0;padding:20px;border-radius:22px;border:1px solid rgba(255,59,78,.5);background:linear-gradient(160deg,rgba(255,59,78,.2),rgba(20,23,30,.9) 45%,rgba(122,92,255,.2));box-shadow:0 0 34px rgba(255,59,78,.25)}
+.snap .big{font-size:58px;font-weight:700;line-height:1;margin:2px 0 16px;text-shadow:0 0 24px rgba(255,59,78,.6)}
+.snap small.k{color:var(--red);font:600 14px Rajdhani;letter-spacing:.2em}
+.snap .cell{word-break:break-word}.snap .cell .num{font-size:22px}.snap .cmt{font:400 15px/1.5 Inter;text-transform:none;letter-spacing:0;margin-top:6px;white-space:pre-wrap}
+.brand{margin-top:14px;text-align:center;color:var(--mut);font:600 13px Rajdhani;letter-spacing:.25em;text-transform:uppercase}
+.hint{color:var(--mut);font-size:13px;text-align:center;margin-top:6px}
+.v2tag{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(46,204,113,.45);background:rgba(46,204,113,.09);color:#a8f0c1;padding:5px 9px;border-radius:99px;font-size:12px;margin:5px 0 10px}.v2section{margin-top:14px}.v2section h3{font:700 18px Rajdhani;letter-spacing:.08em;text-transform:uppercase;margin:0 0 8px}.v2text{color:var(--mut);font-size:13px;line-height:1.55}.v2list{padding-left:19px;margin:8px 0}.v2list li{margin:6px 0;line-height:1.45}.v2pill{display:inline-block;border:1px solid var(--line);background:var(--card);border-radius:9px;padding:7px 9px;margin:3px;font-size:13px}
+.dt{display:grid;gap:16px}.dt label{display:grid;gap:6px;color:var(--mut);font:600 14px Rajdhani;letter-spacing:.15em;text-transform:uppercase}
+.nav{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.nav .btn{font-size:15px;padding:13px 4px;letter-spacing:.05em}
+.hd{display:flex;align-items:center;gap:12px;margin-bottom:16px}.hd h2{font-size:32px}
+.srch{display:flex;gap:8px;margin-bottom:12px}.srch input{flex:1;min-width:0;font-size:17px;padding:13px}.srch .btn{width:auto;padding:0 16px;font-size:16px}
+.chips{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px}.chips .chip{white-space:nowrap;cursor:pointer;flex:none}.chip.on{border-color:var(--red);color:var(--tx);background:rgba(255,59,78,.16)}
+.cbox{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}.cbox h3{margin:10px 0 6px;font:600 14px Rajdhani;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);position:sticky;left:0;width:max-content}
+.sc{overflow-x:auto}.ch{height:170px}
+#lmap{height:52vh;min-height:300px;border-radius:16px;overflow:hidden;border:1px solid var(--line);margin-bottom:12px}
+.leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.9)}.pin{background:none;border:0;font-size:28px;line-height:1;filter:drop-shadow(0 0 6px rgba(255,59,78,.9))}
+.leaflet-popup-content a{color:#c2185b;font-weight:600}
+.lg{margin-bottom:10px;cursor:pointer}.lh{display:flex;align-items:center;gap:12px}.lh img,.lh .ph{width:56px;height:56px;border-radius:12px;object-fit:cover;flex:none;background:rgba(255,255,255,.08);display:grid;place-items:center;font-size:26px}.lh .num{font-size:22px;margin:0}.lh small{font:500 13px Inter;letter-spacing:0;text-transform:none}
+.det{margin-top:12px}.pv{width:100%;max-height:300px;object-fit:cover;border-radius:14px;margin:0 0 12px;display:block}.pv.hide{display:none}.chip b{color:var(--tx);font-weight:600}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#171a22;border:1px solid var(--line);padding:12px 18px;border-radius:14px;z-index:60;display:none;max-width:90%;text-align:center;font-size:14px}
+#gres .opt,#mres .opt{width:100%;margin-bottom:8px;padding:12px}
+.chkrow{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;font:600 22px Rajdhani;margin-bottom:12px;cursor:pointer}.chkrow input{width:24px;height:24px;padding:0;flex:none;accent-color:var(--red)}
+.dc{flex:none;min-width:108px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center}.dc b{font-size:13px}.dc small{font-size:12px;color:var(--mut)}.di{font-size:30px;line-height:1.1}
+#crop{position:fixed;inset:0;background:rgba(6,8,12,.95);z-index:70;display:none;align-items:center;justify-content:center;padding:16px}#crop.on{display:flex}.cw{width:100%;max-width:460px;display:flex;flex-direction:column;gap:12px;align-items:center}#cv{touch-action:none;border-radius:12px;border:1px solid var(--line);background:#000}#crz{width:100%;padding:0}#crr{justify-content:center;margin:0}
+.home{gap:9px;padding-bottom:14px}.home h1{font-size:46px}.home p{font-size:14px;line-height:1.4;margin:0 0 4px}.home .row{gap:8px}.home>.btn,.home .row .btn{padding:13px 18px;font-size:18px}.home .nav .btn{padding:10px 4px}
+.sit{border-collapse:collapse;font-size:13px}.sit td{padding:6px 4px;text-align:center;min-width:46px;border-bottom:1px solid var(--line);white-space:nowrap}.sit td:first-child{position:sticky;left:0;background:var(--card);color:var(--mut);text-align:left;font-weight:600;min-width:62px;z-index:1}.sit .ix{border-radius:8px;font-weight:700;color:#fff;padding:5px 0}.sit .off{opacity:.3}
+.cell .num.sm{font-size:18px;font-weight:600;line-height:1.3}
+</style></head><body><div class="app">
+
+<section class="screen home on" id="home">
+ <div style="flex:1;display:grid;place-items:center;font-size:64px;filter:drop-shadow(0 0 30px rgba(255,59,78,.6))">🎣</div>
+ <h1>Compagnon<br><span>Pêche</span></h1>
+ <p>Carnassiers : indique les conditions du jour, reçois la stratégie, le leurre, la couleur, l’animation et la zone à viser.</p>
+ <div class="row"><button class="btn" id="create">Créer une sortie</button><button class="btn alt" id="fish">Fish On 🐟</button></div>
+ <button class="btn ghost" id="adv" style="padding:13px 18px;font-size:18px">🧠 Compagnon Pêche V2 · stratégie avancée</button><div class="hint">V2 : espèce, habitat, profondeur, fourrage, courant et plan B</div>
+ <div class="nav"><button class="btn ghost" id="nmet">☁️ Météo</button><button class="btn ghost" id="nmap">🗺️ Carte</button><button class="btn ghost" id="nlog">📒 Carnet</button></div>
+ <button class="btn ghost" id="nsi" style="padding:11px;font-size:16px">🎯 Score indice météo</button>
+ <a class="btn ghost" href="https://www.tiktok.com/@skymourai" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;padding:11px;font-size:15px">🎵 Suivre sur TikTok · @skymourai</a>
+ <div style="text-align:center;margin-top:2px;font-size:12px;letter-spacing:.14em;color:var(--mut)">Développé par <b style="color:var(--tx);font-weight:600">Skymourai</b></div>
+</section>
+
+<section class="screen" id="wiz">
+ <div class="top"><button class="back" id="back" aria-label="Retour">‹</button><div class="bar" id="bar"></div></div>
+ <div class="q" id="q"></div>
+ <div class="foot"><button class="btn hide" id="next">Continuer</button></div>
+</section>
+
+<section class="screen res" id="res"></section>
+<section class="screen res" id="fres"></section>
+<section class="screen" id="met"><div class="hd"><button class="back" data-home>‹</button><h2>Météo</h2></div>
+ <div class="srch"><input id="city" placeholder="Ville du spot…" autocomplete="off"><button class="btn" id="go">OK</button></div>
+ <div id="gres"></div><div class="chips" id="mspots"></div><div class="chips" id="mdays"></div><div id="mout"><div class="hint">Cherche une ville ou choisis un de tes spots.</div></div></section>
+<section class="screen" id="mapS"><div class="hd"><button class="back" data-home>‹</button><h2>Mes spots</h2></div>
+ <div class="srch"><input id="mq" placeholder="Aller à une ville…" autocomplete="off"><button class="btn" id="mgo">OK</button><button class="btn ghost" id="loc" aria-label="Ma position">📍</button></div>
+ <div id="mres"></div><div id="lmap"></div>
+ <div class="cbox hide" id="spform"><input id="spn" maxlength="40" placeholder="Nom du spot (ex : Ponton nord)"><div class="nav" style="grid-template-columns:2fr 1fr;margin-top:10px"><button class="btn alt" id="sps">Enregistrer</button><button class="btn ghost" id="spc">Annuler</button></div></div>
+ <div class="hint" id="mh">Touche la carte pour ajouter un spot de pêche.</div></section>
+<section class="screen" id="sci"><div class="hd"><button class="back" data-home>‹</button><h2 style="font-size:26px">Score indice météo</h2></div>
+ <div class="srch"><input id="sicity" placeholder="Ville du spot…" autocomplete="off"><button class="btn" id="sigo">OK</button></div>
+ <div id="sires"></div><div class="chips" id="sispots"></div><div class="chips" id="sidays"></div><div id="siout"><div class="hint">Cherche une ville ou choisis un de tes spots.</div></div></section>
+<section class="screen" id="log"><div class="hd"><button class="back" data-home>‹</button><h2>Carnet</h2></div>
+ <div class="chips" id="lf"></div><div id="ll"></div>
+ <div class="acts"><button class="btn ghost" id="exp">⬇️ Exporter la sauvegarde</button><button class="btn ghost" id="imp">⬆️ Importer une sauvegarde</button><input type="file" id="impf" accept=".json" hidden></div></section>
+
+</div>
+<div id="toast"></div>
+<div id="crop"><div class="cw"><b style="font:700 22px Rajdhani;letter-spacing:.1em">RECADRER LA PHOTO</b><canvas id="cv"></canvas><div class="chips" id="crr"></div><input type="range" id="crz" min="1" max="4" step=".01" value="1" aria-label="Zoom"><div class="nav" style="grid-template-columns:1fr 2fr;width:100%"><button class="btn ghost" id="crx">Annuler</button><button class="btn alt" id="cro">Valider</button></div></div></div>
+<div id="modal"><div class="mbox"><div class="ic">📲</div><h2>Fish On</h2><p>Remplir les données suivantes à l’aide de l’application Decathlon Fishing.</p><button class="btn alt" id="ok">OK</button></div></div>
+<script>
+const M={"Soleil|Claire|Baisse modérée":{"v":"Faible","s":"Finesse","c":"Naturel","l":"Soft jerkbait","a":"Lente","z":"Bordures"},"Soleil|Claire|Chute brutale":{"v":"Fort","s":"Réaction","c":"Brillant","l":"Spinnerbait","a":"Rapide","z":"Pleine eau"},"Soleil|Claire|Stable":{"v":"Modéré","s":"Standard","c":"Naturel","l":"Swimbait","a":"Moyenne","z":"Herbiers"},"Soleil|Claire|Hausse":{"v":"Faible","s":"Prospection","c":"Clair","l":"Topwater","a":"Lente","z":"Surface"},"Soleil|Teintée / Thé|Baisse modérée":{"v":"Modéré","s":"Contraste","c":"Chartreuse","l":"Crankbait","a":"Moyenne","z":"Cassures"},"Soleil|Teintée / Thé|Chute brutale":{"v":"Fort","s":"Vibration","c":"Sombre","l":"Lipless","a":"Rapide","z":"Fonds"},"Soleil|Teintée / Thé|Stable":{"v":"Faible","s":"Finesse","c":"Blanc","l":"Jig","a":"Lente","z":"Bois morts"},"Soleil|Teintée / Thé|Hausse":{"v":"Modéré","s":"Réaction","c":"Flashy","l":"Jerkbait","a":"Moyenne","z":"Pleine eau"},"Soleil|Très trouble|Baisse modérée":{"v":"Fort","s":"Bruit","c":"Sombre","l":"Chatterbait","a":"Lente","z":"Bordures"},"Soleil|Très trouble|Chute brutale":{"v":"Fort","s":"Vibration max","c":"Noir","l":"Spinnerbait colorado","a":"Rapide","z":"Fonds"},"Soleil|Très trouble|Stable":{"v":"Modéré","s":"Silhouette","c":"Noir/Bleu","l":"Rubber Jig","a":"Lente","z":"Obstacles"},"Soleil|Très trouble|Hausse":{"v":"Faible","s":"Bruit","c":"Sombre","l":"Squarebill","a":"Moyenne","z":"Bordures"},"Couvert|Claire|Baisse modérée":{"v":"Faible","s":"Finesse","c":"Naturel","l":"Worm","a":"Lente","z":"Fonds"},"Couvert|Claire|Chute brutale":{"v":"Fort","s":"Réaction","c":"Blanc","l":"Jerkbait","a":"Rapide","z":"Pleine eau"},"Couvert|Claire|Stable":{"v":"Modéré","s":"Prospection","c":"Ayu","l":"Swimbait","a":"Moyenne","z":"Herbiers"},"Couvert|Claire|Hausse":{"v":"Faible","s":"Surface","c":"Naturel","l":"Stickbait","a":"Lente","z":"Surface"},"Couvert|Teintée / Thé|Baisse modérée":{"v":"Modéré","s":"Contraste","c":"Chartreuse","l":"Crankbait","a":"Moyenne","z":"Cassures"},"Couvert|Teintée / Thé|Chute brutale":{"v":"Fort","s":"Vibration","c":"Sombre","l":"Lipless","a":"Rapide","z":"Fonds"},"Couvert|Teintée / Thé|Stable":{"v":"Faible","s":"Finesse","c":"Blanc","l":"Jig","a":"Lente","z":"Bois morts"},"Couvert|Teintée / Thé|Hausse":{"v":"Modéré","s":"Réaction","c":"Flashy","l":"Jerkbait","a":"Moyenne","z":"Pleine eau"},"Couvert|Très trouble|Baisse modérée":{"v":"Fort","s":"Bruit","c":"Sombre","l":"Chatterbait","a":"Lente","z":"Bordures"},"Couvert|Très trouble|Chute brutale":{"v":"Fort","s":"Vibration max","c":"Noir","l":"Spinnerbait colorado","a":"Rapide","z":"Fonds"},"Couvert|Très trouble|Stable":{"v":"Modéré","s":"Silhouette","c":"Noir/Bleu","l":"Rubber Jig","a":"Lente","z":"Obstacles"},"Couvert|Très trouble|Hausse":{"v":"Faible","s":"Bruit","c":"Sombre","l":"Squarebill","a":"Moyenne","z":"Bordures"},"Orageux / Sombre|Claire|Baisse modérée":{"v":"Faible","s":"Finesse","c":"Naturel","l":"Worm","a":"Lente","z":"Fonds"},"Orageux / Sombre|Claire|Chute brutale":{"v":"Fort","s":"Réaction","c":"Blanc","l":"Jerkbait","a":"Rapide","z":"Pleine eau"},"Orageux / Sombre|Claire|Stable":{"v":"Modéré","s":"Prospection","c":"Ayu","l":"Swimbait","a":"Moyenne","z":"Herbiers"},"Orageux / Sombre|Claire|Hausse":{"v":"Faible","s":"Surface","c":"Naturel","l":"Stickbait","a":"Lente","z":"Surface"},"Orageux / Sombre|Teintée / Thé|Baisse modérée":{"v":"Modéré","s":"Contraste","c":"Chartreuse","l":"Crankbait","a":"Moyenne","z":"Cassures"},"Orageux / Sombre|Teintée / Thé|Chute brutale":{"v":"Fort","s":"Vibration","c":"Sombre","l":"Lipless","a":"Rapide","z":"Fonds"},"Orageux / Sombre|Teintée / Thé|Stable":{"v":"Faible","s":"Finesse","c":"Blanc","l":"Jig","a":"Lente","z":"Bois morts"},"Orageux / Sombre|Teintée / Thé|Hausse":{"v":"Modéré","s":"Réaction","c":"Flashy","l":"Jerkbait","a":"Moyenne","z":"Pleine eau"},"Orageux / Sombre|Très trouble|Baisse modérée":{"v":"Fort","s":"Bruit","c":"Flashy","l":"Chatterbait","a":"Lente","z":"Bordures"},"Orageux / Sombre|Très trouble|Chute brutale":{"v":"Fort","s":"Vibration max","c":"Flashy","l":"Spinnerbait colorado","a":"Rapide","z":"Fonds"},"Orageux / Sombre|Très trouble|Stable":{"v":"Modéré","s":"Silhouette","c":"Flashy","l":"Rubber Jig","a":"Lente","z":"Obstacles"},"Orageux / Sombre|Très trouble|Hausse":{"v":"Faible","s":"Bruit","c":"Flashy","l":"Squarebill","a":"Moyenne","z":"Bordures"}};
+
+const SKY=[["Soleil","☀️","Ensoleillé"],["Couvert","☁️","Nuageux / couvert"],["Orageux / Sombre","⛈️","Orageux / sombre"]];
+const SKYA=[...SKY,["Auto","📡","Automatique","Selon le spot"]];
+const EAU=[["Claire","💧","Claire"],["Teintée / Thé","🍵","Teintée"],["Très trouble","🟤","Très teintée"]];
+const VENT=[["Faible","🍃","Faible / calme","0–10 km/h"],["Modéré","🌬️","Modéré","10–25 km/h"],["Fort","💨","Fort","+25 km/h"]];
+const PRES=[["Baisse modérée","↘️","Baisse modérée"],["Chute brutale","⬇️","Chute brutale"],["Stable","➡️","Stable"],["Hausse","↗️","Hausse"]];
+const FISH=[["Truite","🐟","Truite"],["Brochet","🐊","Brochet"],["Sandre","👁️","Sandre"],["Perche","🐠","Perche"]];
+const LEU=[...new Set(Object.values(M).map(r=>r.l))].map(l=>[l,"",l]);
+const ANI=[["Lente","🐢","Lente"],["Moyenne","🚶","Moyenne"],["Rapide","⚡","Rapide"]];
+const DIR=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"].map(d=>[d,"",d]);
+const LAB={ciel:SKY,eau:EAU,vent:VENT,pression:PRES};
+const SORTIE={steps:[
+ {k:"id",t:"Nomme ta sortie",type:"text",ph:"Ex : Lac du matin"},
+ {k:"ciel",t:"La météo",o:SKYA},{k:"loc",t:"Localisation",type:"loc",skip:()=>S.ciel!=='Auto'},{k:"eau",t:"Couleur de l’eau",o:EAU},{k:"vent",t:"Force du vent",o:VENT,skip:()=>S.ciel==='Auto'},{k:"pression",t:"Tendance de pression",o:PRES,skip:()=>S.ciel==='Auto'}],done:()=>result()};
+const FISHON={steps:[
+ {k:"poisson",t:"Type de poisson",o:FISH},{k:"mesure",t:"Taille et poids",type:"mesure"},{k:"spot",t:"Le spot",o:()=>[...spots.map(x=>[x.id,"📍",x.nom,"Météo auto"]),["","➖","Sans spot","Saisie manuelle"]]},{k:"poste",t:"Le poste",type:"text",ph:"Ex : Ponton nord, pointe des roseaux"},{k:"dt",t:"Date et heure de la prise",type:"dt"},{k:"leurre",t:"Leurre utilisé",o:LEU,cls:"two"},{k:"anim",t:"Animation",o:ANI},
+ {k:"couleur",t:"Couleur du leurre",type:"text",ph:"Ex : Chartreuse, Fire Tiger, Ayu"},
+  {k:"ref",t:"Référence du leurre",type:"text",ph:"Ex : Caperlan Shad ROGEN 200 TP7Gr"},
+ {k:"hpa",t:"Pression atmosphérique (hPa)",type:"text",ph:"Ex : 1015",im:"decimal"},
+ {k:"ciel",t:"La météo",o:SKY},
+ {k:"temp",t:"Température (°C)",type:"text",ph:"Ex : 14",im:"decimal"},
+ {k:"dir",t:"Sens du vent",o:DIR,cls:"dir"},
+ {k:"ventf",t:"Force du vent (km/h)",type:"text",ph:"Ex : 12",im:"decimal"},
+  {k:"debit",t:"Débit / hauteur d’eau",type:"text",ph:"Ex : 4.2 m³/s ou 85 cm"},
+ {k:"photo",t:"Photo de la prise",type:"photo"},
+ {k:"note",t:"Commentaires",type:"area",ph:"Un petit mot sur cette prise…"}],done:()=>fishRes()};
+const $=id=>document.getElementById(id);let st=0,S={},F=SORTIE;
+const e=t=>String(t==null?"":t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));scrollTo(0,0)};
+const lab=(k,v)=>LAB[k].find(o=>o[0]===v)[2];
+
+/* ===== Sortie avancée (matrice complète) ===== */
+const MX=[{"id":"REG_001","e":"Brochet","sa":0,"te":0,"pr":-2,"sk":"dark","ea":["tint"],"ve":[1,2],"pp":["low"],"rs":"Printemps (Pré-fraie/Post)","rt":"Eau froide (<10°C)","rp":"Chute brutale","rk":"Couvert / Sombre","pf":"Inter-couche (1.5-3m)","st":"Power Fishing","tc":"Slow-rolling","fa":"Spinnerbait / Chatterbait","mo":"Jighead intégrée","tl":"12-16","co":"Firetiger / Chartreuse","at":"Bavette/Palette (Vibrations fortes)","an":"Linéaire lent avec pauses","zo":"Bordures baies ensoleillées & herbiers naissants"},{"id":"REG_002","e":"Brochet","sa":0,"te":1,"pr":0,"sk":"sun","ea":["clear"],"ve":[0],"pp":["mid"],"rs":"Printemps (Pré-fraie/Post)","rt":"Eau tempérée (10-18°C)","rp":"Stable","rk":"Grand Soleil","pf":"Surface à Peu profond (0.5-1.5m)","st":"Pêche de réaction","tc":"Jerkbaiting / Topwater","fa":"Jerkbait Hard / Stickbait","mo":"Leste interne / Suspending","tl":"11-15","co":"Alose / Argenté / Natural Roach","at":"Sans attractant (Visuel)","an":"Twitchs secs avec longues pauses","zo":"Lits de nénuphars & plateaux peu profonds"},{"id":"REG_003","e":"Brochet","sa":1,"te":2,"pr":0.3,"sk":"sun","ea":["clear"],"ve":[0],"pp":["high"],"rs":"Été","rt":"Eau chaude (>18°C)","rp":"Stable / Haute","rk":"Grand Soleil","pf":"Fond / Ombrage (3-6m)","st":"Finesse / Grattage","tc":"Linear / Verticale","fa":"Big Shad souple / Swimbait","mo":"Tête Plombée (7-14g)","tl":"18-25","co":"Snoek / Perche / Translucide","at":"Attractant Anis/Ecrevisse","an":"Lent au ras du fond avec légers tirées","zo":"Cassures profondes & piles de ponts"},{"id":"REG_004","e":"Brochet","sa":1,"te":2,"pr":-2,"sk":"rain","ea":["tint"],"ve":[1,2],"pp":["mid"],"rs":"Été","rt":"Eau chaude (>18°C)","rp":"Chute brutale","rk":"Orageux / Sombre","pf":"Surface (0-1m)","st":"Power Fishing / Surface","tc":"Topwater / Buzzing","fa":"Frog / Buzzbait / Popper","mo":"Hameçon Texan (Anti-herbe)","tl":"10-14","co":"Noir / Dark Violet / Orange UV","at":"Rattle puissant / Buzz","an":"Récupération rapide et chaotique","zo":"Cœur des herbiers & nénuphars"},{"id":"REG_005","e":"Brochet","sa":2,"te":1,"pr":1,"sk":"veil","ea":["tint"],"ve":[1],"pp":["low","mid"],"rs":"Automne","rt":"Eau tempérée (10-18°C)","rp":"Hausse modérée","rk":"Voilé / Variable","pf":"Inter-couche (2-4m)","st":"Power Fishing","tc":"Linear / Swimbaiting","fa":"Shad souple / Swimbaits articulés","mo":"Tête plombée VMC / Rig Shallow","tl":"15-22","co":"Perche / Blanc Nacré / Ayu","at":"Attractant Poisson","an":"Linéaire continu régulier à mi-eau","zo":"Périphérie des herbiers & chasses de fourrage"},{"id":"REG_006","e":"Brochet","sa":3,"te":0,"pr":0.3,"sk":"dark","ea":["clear"],"ve":[0],"pp":["high"],"rs":"Hiver","rt":"Eau froide (<10°C)","rp":"Stable / Haute","rk":"Couvert / Brume","pf":"Fond / Fosses (>5m)","st":"Pêche Lente / Deadsticking","tc":"Verticale / Slow Jerk","fa":"Gros Shad / Soft Jerk","mo":"Tête plombée lourde (14-25g)","tl":"18-30","co":"Motoroil / Chartreuse / Glow","at":"Attractant Ail / Poisson","an":"Animation ultra-lente presque immobile","zo":"Fosses profondes & lit de rivière"},{"id":"REG_007","e":"Sandre","sa":0,"te":1,"pr":0,"sk":"dawn","ea":["tint"],"ve":[0],"pp":["mid"],"rs":"Printemps (Pré-fraie/Post)","rt":"Eau tempérée (10-18°C)","rp":"Stable","rk":"Aube / Crépuscule","pf":"Fond (1.5-3m)","st":"Grattage / Tactile","tc":"Scratch Fishing / Drop-Shot","fa":"Finesse / Pintail / Slug","mo":"Tête Sabot / Football (5-10g)","tl":"8-12","co":"Blanc Rose UV / Chartreuse","at":"Attractant Écrevisse","an":"Petits bonds sur le fond / Pause 3 sec","zo":"Secteurs sablonneux & gravières peu profondes"},{"id":"REG_008","e":"Sandre","sa":1,"te":2,"pr":0.3,"sk":"sun","ea":["clear"],"ve":[0],"pp":["high"],"rs":"Été","rt":"Eau chaude (>18°C)","rp":"Stable / Haute","rk":"Grand Soleil","pf":"Profond (>6m)","st":"Verticale / Pelagique","tc":"Verticale / Live-Scope","fa":"Pintail / Slug / Shad droit","mo":"Tête Plombée Peinte (10-20g)","tl":"12-16","co":"Bleu Holo / Crystal Clear / Translucide","at":"Attractant Strong Fish","an":"Maintien stationnaire au-dessus du poisson","zo":"Eaux libres / Pélagique & structures noyées"},{"id":"REG_009","e":"Sandre","sa":2,"te":1,"pr":-2,"sk":"rain","ea":["mud"],"ve":[1],"pp":["low"],"rs":"Automne","rt":"Eau tempérée (10-18°C)","rp":"Chute brutale","rk":"Pluvieux / Sombre","pf":"Fond (3-5m)","st":"Power Verticale","tc":"Verticale lourde","fa":"Shad à forte vibration / Chatter","mo":"Tête Plombée Darter / VMC","tl":"10-14","co":"Firetiger UV / Jaune Fluo / Noir","at":"Rattle métallique / Attractant","an":"Animation dynamique avec forts dards","zo":"Entrées de canaux & amortis de courant"},{"id":"REG_010","e":"Sandre","sa":3,"te":0,"pr":0.3,"sk":"dark","ea":["clear"],"ve":[0],"pp":["mid"],"rs":"Hiver","rt":"Eau froide (<10°C)","rp":"Stable / Haute","rk":"Couvert","pf":"Profond (6-10m)","st":"Grattage ultra-lourd","tc":"Linear à gratter","fa":"Shad souple tail fin / Grub","mo":"Tête Plombée Football (15-28g)","tl":"9-12","co":"Ayu / Ghost / Motoroil UV","at":"Attractant Ail / Sang","an":"Glissades lentes sur le fond sans décoller","zo":"Trous d'eau / Fosses de barrage"},{"id":"REG_011","e":"Perche","sa":0,"te":1,"pr":0,"sk":"sun","ea":["clear"],"ve":[0],"pp":["mid"],"rs":"Printemps","rt":"Eau tempérée (10-18°C)","rp":"Stable","rk":"Grand Soleil","pf":"Surface à Inter-couche","st":"Finesse / Réaction","tc":"Light Crank / Spin-tail","fa":"Crankbait Shallow / Tailspinner","mo":"Intégré","tl":"4-7","co":"Perche / Dos Vert / Holo Silver","at":"Sans attractant","an":"Récupération continue très rapide","zo":"Bordures de quais & piles de pont"},{"id":"REG_012","e":"Perche","sa":1,"te":2,"pr":-2,"sk":"dawn","ea":["clear","tint"],"ve":[0],"pp":["high"],"rs":"Été","rt":"Eau chaude (>18°C)","rp":"Chute brutale","rk":"Aube / Crépuscule","pf":"Surface (0-0.5m)","st":"Surface / Chasse","tc":"Topwater / Walk-the-dog","fa":"Stickbait Ultra-Light / Popper","mo":"Armement triple ventral","tl":"5-8","co":"Blanc Transparent / Ghost Shad","at":"Sans attractant","an":"Ziczac rapide en surface (Walk the dog)","zo":"Chasses de surface / Hauts-fonds"},{"id":"REG_013","e":"Perche","sa":2,"te":1,"pr":1,"sk":"veil","ea":["tint"],"ve":[1],"pp":["low"],"rs":"Automne","rt":"Eau tempérée (10-18°C)","rp":"Hausse modérée","rk":"Voilé / Variable","pf":"Inter-couche (2-4m)","st":"Power Fishing Light","tc":"Linear / Darting","fa":"Blade Bait (Lame) / Micro-Jig","mo":"Lame Métallique / Jighead","tl":"5-9","co":"Mat Tiger / Chartreuse / Camo","at":"Rattle intégré lame","an":"Dents de scie rapides entre deux eaux","zo":"Bancs de friture en pleine eau"},{"id":"REG_014","e":"Perche","sa":3,"te":0,"pr":0.3,"sk":"dark","ea":["clear"],"ve":[0],"pp":["high"],"rs":"Hiver","rt":"Eau froide (<10°C)","rp":"Stable / Haute","rk":"Couvert","pf":"Fond (4-8m)","st":"Finesse statique","tc":"Drop-Shot / Carolina Rig","fa":"Créature / Ecrevisse / Micro Slug","mo":"Plomb Palan / Texan léger","tl":"5-7","co":"Motoroil / Cinnamon / Blood","at":"Attractant Ecrevisse intense","an":"Micro-vibrations sur place sans déplacer le plomb","zo":"Trous profonds & pieds de bâti"},{"id":"REG_015","e":"Black-bass","sa":0,"te":1,"pr":0,"sk":"sun","ea":["clear"],"ve":[0],"pp":["mid"],"rs":"Printemps","rt":"Eau tempérée (10-18°C)","rp":"Stable","rk":"Grand Soleil","pf":"Peu profond (0.5-1.5m)","st":"Sight Fishing (A vue)","tc":"Wacky / Neko Rig","fa":"Whacky Worm / Straight Stick","mo":"Hameçon Wacky Wacky + Weight","tl":"10-14","co":"Green Pumpkin / Watermelon","at":"Attractant Sel / Anis","an":"Tremblements lents au coulé à vue","zo":"Nids & bordures ombragées"},{"id":"REG_016","e":"Black-bass","sa":1,"te":2,"pr":0.3,"sk":"sun","ea":["tint"],"ve":[0],"pp":["high"],"rs":"Été","rt":"Eau chaude (>18°C)","rp":"Stable / Haute","rk":"Grand Soleil","pf":"Cœur d'obstacle (0-2m)","st":"Pitching / Punching","tc":"Punching / Rubber Jig","fa":"Rubber Jig + Trailer Ecrevisse","mo":"Tête Balle Texan lourde (14-28g)","tl":"8-12","co":"Black & Blue / Junebug","at":"Attractant Écrevisse / Ail","an":"Pénétration brutale dans le couvert + pauses","zo":"Cœur des herbiers mats & bois mort dense"},{"id":"REG_017","e":"Truite","sa":0,"te":0,"pr":0,"sk":"sun","ea":["clear"],"ve":[0],"pp":["low"],"rs":"Printemps","rt":"Eau froide (<10°C)","rp":"Stable","rk":"Grand Soleil","pf":"Fond / Radier (0.5-1.5m)","st":"Ultra-Léger / Precision","tc":"Cuillère / Minnow Coulant","fa":"Cuillère Ondulante / Density Minnow","mo":"Hameçon Simple sans ardillon","tl":"3-6","co":"Argent / Cuivre / Truite Fario","at":"Palette brillante","an":"Animation lente en dérive naturelle dans le courant","zo":"Amortis de courant & têtes de pool"},{"id":"REG_018","e":"Truite","sa":1,"te":1,"pr":1,"sk":"veil","ea":["clear"],"ve":[0],"pp":["mid"],"rs":"Été","rt":"Eau tempérée (10-18°C)","rp":"Hausse modérée","rk":"Voilé / Ombragé","pf":"Courant vif / Surface","st":"Pêche active / Twitching","tc":"Hard Minnow / Insecte","fa":"Poisson Nageur Suspending / Insecte","mo":"Micro-triples ou simples","tl":"4-7","co":"Vairon / Ghost Pink / Imimic Bug","at":"Sans attractant","an":"Twitchs très rapides dans les courants vifs","zo":"Cascades / Veines d'eau rapides & sous-berge"},{"id":"REG_019","e":"Silure","sa":1,"te":2,"pr":-2,"sk":"rain","ea":["mud"],"ve":[1,2],"pp":["low"],"rs":"Été","rt":"Eau chaude (>18°C)","rp":"Chute brutale","rk":"Orageux / Sombre","pf":"Profond à Inter-couche","st":"Vibrations Massives","tc":"Power Linear / Verticale","fa":"Big Shad 25cm+ / Chatterbait Heavy","mo":"Tête Plombée Extra-Heavy (40-80g)","tl":"20-30","co":"Firetiger / Noir / Pink Fluo","at":"Rattle Bille Acier XL + Attractant Poisson","an":"Vibrations maximales en linéaire lent","zo":"Fosses de fleuve & sorties de barrage"},{"id":"REG_020","e":"Brochet","sa":2,"te":null,"pr":-2,"sk":"rain","ea":["tint"],"ve":[2],"pp":["low"],"rs":"Automne","rt":"n.c.","rp":"Chute brutale","rk":"Pluvieux / Ventueux","pf":"Peu profond (1-2m)","st":"Power Fishing","tc":"Spinnerbait heavy","fa":"Spinnerbait double feuille de saule","mo":"Tête intégrée 21g","tl":"14-18","co":"Chartreuse / White Glow","at":"Double palette métallique","an":"Lancer-ramener rapide sur la côte battue par les vagues","zo":"Bordures exposées au vent plein fouet"}];
+const ESP=[["Brochet","🐊","Brochet"],["Sandre","👁️","Sandre"],["Perche","🐠","Perche"],["Black-bass","🐟","Black-bass"],["Truite","🐟","Truite"],["Silure","🐟","Silure"]];
+const SAI=[["0","🌱","Printemps"],["1","☀️","Été"],["2","🍂","Automne"],["3","❄️","Hiver"]];
+const TEA=[["0","🥶","Eau froide","< 10 °C"],["1","🌤️","Eau tempérée","10 – 18 °C"],["2","🔥","Eau chaude","> 18 °C"]];
+const PRB=[["-1","↘️","Baisse modérée"],["-2","⬇️","Chute brutale"],["0","➡️","Stable / haute"],["1","↗️","Hausse"]];
+const SK2=[["sun","☀️","Grand soleil"],["veil","🌤️","Voilé / variable"],["dark","☁️","Couvert / sombre"],["dawn","🌅","Aube / crépuscule"],["rain","🌧️","Pluvieux / orageux"]];
+const EA2=[["clear","💧","Claire"],["tint","🍵","Teintée"],["mud","🟤","Boueuse / chargée"],["algae","🟢","Verte / algues"]];
+const VT2=[["0","🍃","Faible / calme","0–10 km/h"],["1","🌬️","Modéré","10–25 km/h"],["2","💨","Fort","+25 km/h"]];
+const PPE=[["low","🌲","Peu pêché","Spot sauvage, isolé"],["mid","🎣","Moyennement pêché","Fréquentation normale"],["high","👥","Très pêché","Spot connu, pression forte"]];
+const ADV={steps:[
+ {k:"id",t:"Nomme ta sortie",type:"text",ph:"Ex : Brochet du matin"},
+ {k:"modeV2",t:"Comment renseigner les conditions ?",o:[["auto","📡","Automatique","Je choisis le spot, la météo est récupérée automatiquement"],["manual","✍️","Manuel","Je renseigne moi-même la météo"]]},
+ {k:"esp",t:"Espèce ciblée",o:ESP},
+ {k:"loc",t:"Choisis ton spot pour récupérer la météo",type:"loc",skip:()=>S.modeV2!=="auto"},
+ {k:"sai",t:"Saison",o:SAI,skip:()=>S.modeV2==="auto"},
+ {k:"teau",t:"Température de l’eau",o:TEA,skip:()=>S.modeV2==="auto"},
+ {k:"pres",t:"Tendance de pression",o:PRB,skip:()=>S.modeV2==="auto"},
+ {k:"sky",t:"Ciel et luminosité",o:SK2,skip:()=>S.modeV2==="auto"},
+ {k:"eau2",t:"Couleur de l’eau",o:EA2},
+ {k:"vent2",t:"Force du vent",o:VT2,skip:()=>S.modeV2==="auto"},
+ {k:"pp",t:"Pression de pêche sur le spot",o:PPE}],done:()=>resultAdv()};
+// V2 enrichit la sortie avancée sans supprimer les anciennes matrices ni les données locales.
+const HAB2=[["unknown","❔","Je ne sais pas encore"],["weed","🌿","Herbiers / végétation"],["wood","🪵","Bois, pontons, obstacles"],["drop","⛰️","Cassure, fosse, pente"],["current","🌊","Veine de courant / amorti"],["flat","🏞️","Plateau peu profond"],["open","🐟","Pleine eau / banc de poissons"],["shade","🌳","Ombre, sous-berge, quai"]];
+const DEP2=[["unknown","❔","Profondeur inconnue"],["surface","↗️","Surface à 1 m"],["shallow","🌱","1 à 2,5 m"],["mid","〰️","2,5 à 5 m"],["deep","⬇️","Plus de 5 m"]];
+const FOR2=[["unknown","❔","Fourrage inconnu"],["fry","🐟","Petits poissons / alevins"],["cray","🦞","Écrevisses / proies de fond"],["insect","🪰","Insectes / proies de surface"],["mixed","🪱","Fourrage varié / non identifié"]];
+const CUR2=[["unknown","❔","Courant inconnu"],["none","💧","Eau calme / courant faible"],["moderate","🌊","Courant modéré"],["strong","💨","Courant soutenu"],["variable","↔️","Courant variable / lâchers"]];
+const ACT2=[["unknown","❔","Activité inconnue"],["hunt","🐟","Chasses / poissons actifs visibles"],["follow","👀","Suivent le leurre sans attaquer"],["inactive","🛑","Aucune activité visible"],["bottom","⬇️","Activité supposée près du fond"]];
+const CLAR2=[["unknown","❔","Non évaluée"],["clear","💎","Claire : visibilité élevée"],["tint","🍵","Teintée : visibilité moyenne"],["mud","🟤","Trouble : faible visibilité"],["algae","🟢","Verte / algues"]];
+ADV.steps.push(
+ {k:"habitat",t:"Structure et habitat du spot",o:HAB2},
+ {k:"profondeur",t:"Profondeur où tu penses trouver les poissons",o:DEP2},
+ {k:"fourrage",t:"Proies naturelles observées",o:FOR2},
+ {k:"courant",t:"Courant et mouvement de l’eau",o:CUR2},
+ {k:"activite",t:"Signes d’activité des poissons",o:ACT2},
+ {k:"clarte2",t:"Visibilité réelle de l’eau",o:CLAR2,skip:()=>true},
+ {k:"tempReelle",t:"Température mesurée de l’eau (facultatif, °C)",type:"text",ph:"Ex. 16,5 — laisse vide si inconnue",im:"decimal"}
+);
+// En mode auto, seules les données disponibles via le service météo sont préremplies.
+ADV.steps.find(x=>x.k==="sai").skip=()=>S.modeV2==="auto";
+const MXW={sa:3,te:3,pr:2,sk:2,ea:2,ve:1.5,pp:1},MXN={sa:'la saison',te:'la température de l’eau',pr:'la pression',sk:'la luminosité',ea:'la couleur de l’eau',ve:'le vent',pp:'la pression de pêche'};
+const SKS={sun:{veil:.4,dawn:.3},veil:{sun:.4,dark:.4,dawn:.4},dark:{veil:.4,rain:.5},dawn:{veil:.4,sun:.3},rain:{dark:.5}},EAS={clear:{tint:.4},tint:{clear:.4,mud:.5},mud:{tint:.5}},PPO=['low','mid','high'];
+const mx=a=>Math.max(0,...a);
+function scoreAdv(r){
+ const d=Math.abs(+S.sai-r.sa),o={};
+ o.sa=[1,.4,0][Math.min(d,4-d)];
+ o.te=r.te==null?.5:Math.max(0,1-Math.abs(+S.teau-r.te)*.6);
+ o.pr=Math.max(0,1-Math.abs(+S.pres-r.pr)/2);
+ o.sk=r.sk===S.sky?1:(SKS[S.sky]||{})[r.sk]||0;
+ o.ea=r.ea.includes(S.eau2)?1:mx(r.ea.map(x=>(EAS[S.eau2]||{})[x]||0));
+ o.ve=r.ve.includes(+S.vent2)?1:mx(r.ve.map(x=>Math.abs(x-S.vent2)===1?.4:0));
+ o.pp=r.pp.includes(S.pp)?1:mx(r.pp.map(x=>Math.abs(PPO.indexOf(x)-PPO.indexOf(S.pp))===1?.5:0));
+ const w=Object.keys(MXW);return{r,o,t:w.reduce((a,k)=>a+MXW[k]*o[k],0)/w.reduce((a,k)=>a+MXW[k],0)};
+}
+function resultAdv(){
+ const L=MX.filter(r=>r.e===S.esp).map(scoreAdv).sort((a,b)=>b.t-a.t),A=L[0],B=L.slice(1).find(x=>x.r.fa!==A.r.fa)||L[1],r=A.r,pc=Math.round(A.t*100),col=pc>=75?'#2ecc71':pc>=55?'#ffc46b':'#ff3b4e';
+ const lb=(a,v)=>(a.find(x=>x[0]===v)||[])[2]||v,bad=Object.keys(MXW).filter(k=>A.o[k]<.5).map(k=>MXN[k]);
+ const c=(t,v,w,sm)=>`<div class="cell${w?' w':''}"><small>${t}</small><div class="num${sm?' sm':''}">${e(v)}</div></div>`;
+ $('res').innerHTML=`<small style="color:var(--red);font:600 14px Rajdhani;letter-spacing:.2em">PLAN DE PÊCHE AVANCÉ</small><h2>${e(S.id)}</h2>
+ <div class="recap"><span class="chip" style="border-color:${col};color:${col}">Adéquation indicative ${pc} %</span>${[[ESP,'esp'],[SAI,'sai'],[TEA,'teau'],[PRB,'pres'],[SK2,'sky'],[EA2,'eau2'],[VT2,'vent2'],[PPE,'pp']].map(([a,k])=>`<span class="chip">${e(lb(a,S[k]))}</span>`).join('')}</div>
+ <div class="hero"><small>Stratégie</small><div class="num">${e(r.st)}</div><div style="color:var(--mut);margin-top:4px">${e(r.tc)}</div></div>
+ <div class="grid">${c('Famille de leurre',r.fa,1,1)}${c('Monture / tête',r.mo,1,1)}${c('Taille',r.tl+' cm')}${c('Coloris',r.co,0,1)}${c('Attractant / bruit',r.at,1,1)}${c('Animation',r.an,1,1)}${c('Profondeur cible',r.pf,1,1)}${c('Zone privilégiée','📍 '+r.zo,1,1)}${B?c('Option B · '+Math.round(B.t*100)+' %',B.r.fa+' · '+B.r.co+' · '+B.r.st,1,1):''}</div>
+ ${pc<60?`<div class="note">⚠️ La matrice n’a pas de fiche proche de ta situation pour cette espèce : prends ceci comme une base et adapte-la.</div>`:bad.length?`<div class="note">ℹ️ Fiche la plus proche de tes conditions. Écarts avec ${bad.join(', ')} : adapte le poids du leurre et ta présentation.</div>`:''}
+ <div class="hint" style="text-align:left">Fiche ${r.id} · ${e(r.rs)} · ${e(r.rt)} · ${e(r.rp)} · ${e(r.rk)}</div>
+ <div class="acts"><button class="btn" id="again">Nouvelle sortie avancée</button><button class="btn ghost" id="edit">Modifier les conditions</button><button class="btn ghost" id="h1">Accueil</button></div>`;
+ show('res');$('again').onclick=()=>start(ADV);$('h1').onclick=()=>show('home');$('edit').onclick=()=>{st=ADV.steps.length-1;F=ADV;show('wiz');render()};
+}
+/* ===== Moteur de recommandation V2 ===== */
+const V2W={sa:2.4,te:3.2,pr:.45,sk:1.35,ea:2.4,ve:1.1,pp:.65};
+const V2SPEC={
+ "Brochet":{where:{weed:"Herbiers naissants, bordures et couloirs de végétation",wood:"Bois noyés, pontons et angles d’obstacles",drop:"Cassures adjacentes aux zones de chasse",flat:"Plateaux et bordures proches d’une zone refuge",open:"Bancs d’alevins et bordures de bancs",shade:"Ombres et postes d’embuscade"},lures:{fry:"Minnow, jerkbait, shad ou swimbait imitant un poisson-fourrage",cray:"Shad ou leurre souple près du fond si les proies y sont présentes",insect:"Frog ou leurre de surface seulement si le brochet chasse réellement en surface",mixed:"Spinnerbait, chatterbait ou shad pour prospecter puis leurre plus discret"}},
+ "Sandre":{where:{drop:"Pied de cassure, chenal, fosse et transition de substrat",wood:"Obstacles immergés et bordures proches d’un accès profond",current:"Amortis, bordure de veine et zones où le courant apporte des proies",open:"Bancs de fourrage et poissons suspendus à localiser",flat:"Plateau proche d’une cassure, surtout aux périodes d’activité",shade:"Ombre et poste proche du fond"},lures:{fry:"Shad fin, pintail ou leurre souple de taille cohérente avec les proies",cray:"Leurre souple compact présenté près du fond",insect:"Finesse près des bordures si de petites proies sont observées",mixed:"Shad souple en contact avec le fond, puis drop-shot si les touches sont timides"}},
+ "Perche":{where:{weed:"Lisières d’herbiers et fenêtres dans la végétation",wood:"Piles de pont, pontons et petits obstacles",drop:"Pentes et cassures où les bancs peuvent se regrouper",flat:"Hauts-fonds et bordures si des chasses sont visibles",open:"Bancs d’alevins, oiseaux ou échos indiquant une chasse",shade:"Ombre des quais et sous-berges"},lures:{fry:"Micro-shad, petit minnow, crankbait ou leurre métallique compact",cray:"Petite créature ou micro-jig proche du fond",insect:"Micro-leurre de surface ou imitation d’insecte si les poissons montent",mixed:"Petit shad ou leurre de prospection, puis finesse si refus"}},
+ "Black-bass":{where:{weed:"Poches d’herbiers, lisières et couloirs dégagés",wood:"Bois mort, pontons et abris à prospecter précisément",drop:"Transition entre plateau et profondeur",flat:"Plateau, surtout près d’un couvert ou d’une zone de fraie autorisée",open:"Bordure d’un banc de fourrage, plutôt que pleine eau uniforme",shade:"Ombre, sous-berge, quai et couvert"},lures:{fry:"Petit shad, stickbait ou jerkbait selon l’activité",cray:"Créature, jig ou worm au contact du fond",insect:"Leurre de surface ou insecte si activité visible",mixed:"Worm, jig ou leurre de réaction en fonction du couvert"}},
+ "Truite":{where:{current:"Veine principale, bord de veine, amorti et tête de pool",weed:"Lisières de végétation sans gêner la dérive",wood:"Abri derrière une pierre, une racine ou une berge",drop:"Fosse, radier profond et transition de courant",flat:"Radiers et plats oxygénés si la température reste adaptée",open:"Courant productif et zones où dérivent les proies",shade:"Sous-berge et ombre, surtout en lumière forte"},lures:{fry:"Petit minnow, cuillère ou leurre souple discret",cray:"Petite imitation de fond uniquement si adaptée au milieu",insect:"Imitation d’insecte ou petit leurre de surface selon les éclosions",mixed:"Cuillère ou minnow de taille modeste présenté dans la dérive"}},
+ "Silure":{where:{drop:"Fosses, chenaux et sorties de courant",current:"Zones de courant ralenti, bordures de veine et postes de repos",wood:"Obstacles profonds en gardant une marge de sécurité",open:"Bancs de poissons-fourrage et zones de passage",flat:"Plateau proche d’une fosse ou d’un chenal",shade:"Sous-berges et zones de repos proches du profond",weed:"Lisières d’herbiers proches d’une profondeur refuge"},lures:{fry:"Gros shad ou leurre vibrant dimensionné à la situation",cray:"Présentation près du fond si la zone est sûre et adaptée",insect:"À privilégier seulement si une activité de surface est réellement constatée",mixed:"Gros leurre vibrant en prospection méthodique, puis présentation plus lente"}}
+};
+function resultAdvV2(){
+ const species=S.esp,rows=MX.filter(r=>r.e===species);if(!rows.length){resultAdv();return}
+ const ranked=rows.map(r=>{const q=scoreAdv(r),o=q.o;let n=0,d=0;for(const k of Object.keys(V2W)){if(o[k]!=null){n+=V2W[k]*o[k];d+=V2W[k]}}let score=d?n/d:0.5;
+  // La pression atmosphérique est volontairement secondaire : son effet direct est variable et peu prédictif.
+  if(S.habitat&&S.habitat!=='unknown'){const z=(r.zo+' '+r.pf+' '+r.st+' '+r.fa).toLowerCase();const hm={weed:/herbier|végét|nénuphar|couvert/,wood:/bois|obstacle|ponton|quai|pile/,drop:/cassure|fosse|profond|fond|chenal/,flat:/plateau|peu profond|bordure|haut-fond/,current:/courant|amorti|veine|rivière/,open:/pleine eau|pélagique|fourrage|banc/,shade:/ombre|berge|quai|abri/};const re=hm[S.habitat];if(re){score+=re.test(z)?.07:-.025}}
+  if(S.fourrage==='fry'&&/shad|jerkbait|minnow|swimbait|poisson/i.test(r.fa+' '+r.tc))score+=.045;
+  if(S.fourrage==='cray'&&/jig|créature|grattage|fond|drop-shot|worm/i.test(r.fa+' '+r.tc+' '+r.st))score+=.045;
+  if(S.courant==='strong'&&species==='Truite'&&/courant|dérive|rapide/i.test(r.zo+' '+r.an))score+=.07;
+  if(S.activite==='hunt'&&/surface|réaction|power|rapide|jerkbait|chasse/i.test(r.st+' '+r.tc+' '+r.an))score+=.06;
+  if(S.activite==='inactive'&&/finesse|lent|grattage|drop-shot|statique|pause/i.test(r.st+' '+r.tc+' '+r.an))score+=.055;
+  const measured=parseFloat(String(S.tempReelle||'').replace(',','.'));if(Number.isFinite(measured)){const band=measured<10?0:measured<=18?1:2;if(r.te!=null)score+=Math.max(-.09,.09-Math.abs(band-r.te)*.12)}
+  return {r,score:Math.max(0,Math.min(1,score)),o:q.o};}).sort((a,b)=>b.score-a.score);
+ const A=ranked[0],B=ranked.find(x=>x.r.fa!==A.r.fa)||ranked[1],r=A.r;
+ const pc=Math.round(A.score*100),known=['unknown'].includes(S.habitat)?0:1;const answered=['profondeur','fourrage','courant','activite','clarte2'].filter(k=>S[k]&&S[k]!=='unknown').length+(S.tempReelle&&String(S.tempReelle).trim()?1:0);const confidence=answered>=4?'Personnalisée':answered>=2?'Intermédiaire':'Indicative';
+ const ctx=V2SPEC[species]||V2SPEC.Brochet,hab=S.habitat,clar=S.clarte2||'unknown',depth=S.profondeur||'unknown',forage=S.fourrage||'unknown',current=S.courant||'unknown',activity=S.activite||'unknown';
+ let color='Naturel / translucide';let colorWhy='Commence par un coloris naturel si l’eau est claire et que les poissons voient bien le leurre.';
+ if(clar==='mud'||clar==='algae'||S.eau2==='mud'){color='Contraste net : blanc, chartreuse ou silhouette sombre';colorWhy='En eau chargée, teste un contraste visible; le bon choix dépend aussi de la lumière et du fond.'}
+ else if(clar==='tint'||S.eau2==='tint'){color='Naturel contrasté, blanc ou chartreuse modéré';colorWhy='En eau teintée, privilégie un leurre repérable sans supposer qu’une couleur fluo gagne partout.'}
+ else if(S.sky==='dark'||S.sky==='rain'){color='Silhouette sombre ou contraste clair';colorWhy='Sous faible luminosité, compare une silhouette marquée à un coloris clair.'}
+ let animation=r.an,tech=r.tc;
+ if(activity==='hunt'){animation='Prospection active, récupération continue avec accélérations courtes; ralentis après une poursuite';tech='Réaction / prospection';}
+ else if(activity==='follow'){animation='Ralentis, ajoute une pause ou un changement de direction; teste ensuite un leurre plus petit';tech='Déclencher les suivis sans attaque';}
+ else if(activity==='inactive'){animation='Récupération lente, pauses plus longues et présentation précise près du couvert';tech='Finesse / faible vitesse';}
+ else if(current==='strong'){animation='Lancer en amont ou en travers, contrôler la dérive et augmenter le poids juste assez pour garder le contact';}
+ if(forage==='fry')tech+=' · imiter le poisson-fourrage';if(forage==='cray')tech+=' · présentation près du fond';if(forage==='insect')tech+=' · surveiller les dérives et éclosions';
+ let zone=hab&&hab!=='unknown'&&ctx.where[hab]?ctx.where[hab]:r.zo;
+ if(depth!=='unknown'){const dp={surface:'Commence dans la couche 0–1 m; vérifie les chasses avant de rester en surface.',shallow:'Teste 1–2,5 m et les bordures; fais varier la profondeur par paliers.',mid:'Explore 2,5–5 m en gardant le leurre dans la zone visée.',deep:'Cherche les zones profondes uniquement si température, saison et fourrage le justifient.'};zone+=' '+dp[depth]}
+ if(current==='strong'&&species==='Truite')zone+=' Cherche aussi les bordures de veine et les amortis; évite de pêcher toute la veine à vitesse identique.';
+ const lure=forage!=='unknown'&&ctx.lures[forage]?ctx.lures[forage]:r.fa+' — '+r.tc;
+ const alternatives=[];
+ if(activity==='follow')alternatives.push('Réduis la taille ou passe à un profil plus discret.');
+ if(activity==='inactive')alternatives.push('Change d’angle et de profondeur avant de changer trois fois de couleur.');
+ if(activity==='hunt')alternatives.push('Si les attaques ratent, ralentis et allonge les pauses.');
+ if(clar==='clear')alternatives.push('Si le leurre est suivi sans attaque, passe à un coloris plus discret ou à un bas de ligne/présentation moins visible adapté à l’espèce.');
+ if(clar==='mud'||clar==='algae')alternatives.push('Si le leurre est difficile à repérer, teste davantage de contraste et/ou de vibration plutôt que de changer uniquement de couleur.');
+ if(current==='strong')alternatives.push('Adapte le grammage au courant et à la profondeur : le but est de contrôler la présentation, pas d’utiliser systématiquement le plus lourd.');
+ if(!alternatives.length)alternatives.push('Après 10–15 minutes sans signe, change un seul paramètre à la fois : d’abord la zone/profondeur, puis la vitesse, puis le profil ou le coloris.');
+ const weightText={surface:'Surface',shallow:'Peu profond',mid:'Intermédiaire',deep:'Profond',unknown:'À localiser'}[depth];
+ const c=(t,v,w)=>`<div class="cell${w?' w':''}"><small>${t}</small><div class="num">${e(v)}</div></div>`;
+ const lb=(arr,v)=>(arr.find(x=>x[0]===v)||[])[2]||v;
+ const pressureNote='La pression atmosphérique est prise en compte avec un poids faible : sa tendance seule ne permet pas de prédire de façon fiable une touche.';
+ $('res').innerHTML=`<small style="color:var(--red);font:600 14px Rajdhani;letter-spacing:.2em">COMPAGNON PÊCHE V2</small><h2>${e(S.id||'Plan de pêche')}</h2><div class="v2tag">🧠 Recommandation contextualisée · confiance ${confidence.toLowerCase()}</div>
+ <div class="recap">${S.modeV2==='auto'?`<span class="chip">📡 Auto · ${e(S.locName||'spot')}</span>`:''}<span class="chip">${e(species)}</span><span class="chip">${e(lb(SAI,S.sai))}</span><span class="chip">${e(lb(TEA,S.teau))}</span><span class="chip">${e(lb(EA2,S.eau2))}</span><span class="chip">${e(lb(SK2,S.sky))}</span><span class="chip">${e(lb(VT2,S.vent2))}</span></div>
+ <div class="hero"><small>Stratégie de départ · score de rapprochement, pas probabilité de capture</small><div class="num">${e(r.st)}</div><div style="color:var(--mut);margin-top:4px">${e(tech)}</div><div class="v2text" style="margin-top:8px">Adéquation indicative : ${pc}% · ${confidence}. Ce score compare tes conditions aux fiches disponibles; il ne prédit pas le taux de réussite.</div></div>
+ <div class="grid">${c('Leurre conseillé',lure,1)}${c('Montage / technique',r.mo+' · '+r.tc,1)}${c('Taille de leurre',r.tl+' cm')}${c('Couleur de départ',color,1)}${c('Animation à essayer',animation,1)}${c('Profondeur de travail',weightText+' · '+r.pf,1)}${c('Zone à prospecter','📍 '+zone,1)}${c('Fourrage',lb(FOR2,forage),1)}${c('Courant',lb(CUR2,current))}${c('Activité observée',lb(ACT2,activity))}</div>
+ ${S.modeV2==='auto'?`<div class="cbox v2section"><h3>📡 Conditions automatiques</h3><div class="v2text">${e(S.autoV2Note||'Météo récupérée pour le spot sélectionné.')} La couleur de l’eau, la pression de pêche, l’habitat, la profondeur, le fourrage et l’activité restent à observer ou à renseigner sur place.</div></div>`:''}
+ <div class="cbox v2section"><h3>🎨 Pourquoi cette couleur ?</h3><div class="v2text">${e(colorWhy)} Une couleur n’est jamais universellement supérieure : compare 2 coloris dans les mêmes zones et conditions.</div></div>
+ <div class="cbox v2section"><h3>🔁 Plan d’adaptation</h3><ol class="v2list">${alternatives.map(x=>`<li>${e(x)}</li>`).join('')}</ol><div class="v2text">Règle pratique : change un paramètre à la fois et note les suivis, touches et absences de touche.</div></div>
+ <div class="cbox v2section"><h3>📊 Ce que le moteur sait / ne sait pas</h3><div class="v2text">${e(pressureNote)} ${S.tempReelle&&String(S.tempReelle).trim()?'Température saisie : '+e(S.tempReelle.replace(',','.'))+' °C.':'La température réelle n’a pas été renseignée; la catégorie saisonnière reste une approximation.'} Les recommandations d’habitat et de leurre sont des points de départ à valider sur place.</div></div>
+ ${B?`<div class="cbox v2section"><h3>Option B</h3><div class="num">${e(B.r.fa)}</div><div class="v2text">${e(B.r.co)} · ${e(B.r.st)} · ${e(B.r.an)}</div></div>`:''}
+ <div class="hint" style="text-align:left">Fiche de référence ${e(r.id)} · ${e(r.rs)} · ${e(r.rt)}. Matrice actuelle : ${rows.length} fiche(s) pour ${e(species)}; si la situation est peu documentée, la recommandation reste indicative.</div>
+ <div class="acts"><button class="btn" id="again">Nouvelle sortie V2</button><button class="btn ghost" id="edit">Modifier les conditions</button><button class="btn ghost" id="h1">Accueil</button></div>`;
+ show('res');$('again').onclick=()=>start(ADV);$('h1').onclick=()=>show('home');$('edit').onclick=()=>{st=ADV.steps.length-1;F=ADV;show('wiz');render()};
+}
+ADV.done=()=>resultAdvV2();
+
+/* ===== Sortie : mode météo automatique ===== */
+const VS=()=>F.steps.filter(x=>!x.skip||!x.skip());
+const autoNote=()=>S.autoOK?`<div class="note">📍 ${e(S.locName)}<br>📡 Conditions détectées : ${e(S.autoTxt)}</div>`:'';
+async function autoSortie(lat,lon){
+ const h=(j=>{S.off=j.utc_offset_seconds;return j})(await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,pressure_msl,wind_speed_10m,cloud_cover,precipitation,weather_code&past_days=1&forecast_days=2&wind_speed_unit=kmh&timezone=auto`)).json()),H=h.hourly;
+ const T=H.time.map(x=>Date.parse(x+':00Z')-S.off*1e3),n=Date.now();let i=0;while(i<T.length-1&&T[i+1]<=n)i++;
+ const P=H.pressure_msl,V=H.wind_speed_10m[i],air=H.temperature_2m[i],cl=H.cloud_cover[i]||0,cd=H.weather_code[i]||0,pr=H.precipitation[Math.min(i+1,T.length-1)]||0;
+ S.autoAir=Number.isFinite(air)?air:null;S.autoWind=V;S.autoCloud=cl;S.autoCode=cd;S.autoRain=pr;S.autoPressure=P[i];S.autoDelta3=P[i]-P[Math.max(0,i-3)];
+ if(P[i]==null||V==null)throw 0;
+ const dP=P[i]-P[Math.max(0,i-3)];
+ S.pression=dP<=-3?'Chute brutale':dP<=-1?'Baisse modérée':dP>=1?'Hausse':'Stable';
+ S.vent=V<10?'Faible':V<=25?'Modéré':'Fort';
+ S.cielA=cd>=95||pr>=2||(cl>=90&&pr>=.5)?'Orageux / Sombre':(cl>=60||cd>=3)?'Couvert':'Soleil';
+ S.autoTxt=`${lab('ciel',S.cielA).toLowerCase()} · vent ${Math.round(V)} km/h (${lab('vent',S.vent).toLowerCase()}) · pression ${lab('pression',S.pression).toLowerCase()} (${dP>0?'+':''}${dP.toFixed(1)} hPa/3 h)`;
+ S.autoOK=1;
+}
+function initLoc(){
+ const pick=async(name,lat,lon,id)=>{const t=S.locTok=Date.now();S.autoOK=0;S.locName=name;S.locId=id||'';$('lcr').innerHTML='<div class="hint">Récupération de la météo…</div>';
+  try{await autoSortie(lat,lon);if(S.locTok!==t)return;
+   if(F===ADV){
+    const now=new Date(),month=now.getMonth()+1;S.sai=String(month>=3&&month<=5?0:month>=6&&month<=8?1:month>=9&&month<=11?2:3);
+    S.sky=({ 'Soleil':'sun','Couvert':'veil','Orageux / Sombre':'rain' })[S.cielA]||'veil';
+    S.vent2=String(S.vent==='Faible'?0:S.vent==='Modéré'?1:2);
+    S.pres=S.pression==='Chute brutale'?'-2':S.pression==='Baisse modérée'?'-1':S.pression==='Hausse'?'1':'0';
+    // Température de l'air = indice saisonnier seulement, jamais présentée comme température d'eau mesurée.
+    const air=S.autoAir;let est=month>=6&&month<=8?1:month>=12||month<=2?0:1;
+    if(Number.isFinite(air)){if(air<7)est=0;else if(air>23&&month>=5&&month<=9)est=2;else if(air>=10&&air<=20)est=1;}
+    S.teau=String(est);S.autoV2Note=`Météo récupérée pour ${name}. Saison calculée au calendrier; catégorie d’eau estimée à partir de la saison et de la température de l’air${Number.isFinite(air)?' ('+air.toFixed(1)+' °C)':''}. Ce n’est pas une mesure de température de l’eau.`;
+   }
+   $('lcr').innerHTML=autoNote()+(F===ADV?`<div class="hint">${e(S.autoV2Note)}</div>`:'')
+  }
+  catch(_){if(S.locTok!==t)return;S.autoOK=0;$('lcr').innerHTML='<div class="note">⚠️ Météo indisponible pour ce lieu. Vérifie ta connexion ou choisis la météo manuellement.</div>'}};
+ $('lcg').onclick=()=>search('lci','lcr',g=>pick(g.name,g.lat,g.lon));
+ $('lci').onkeydown=ev=>{if(ev.key==='Enter')$('lcg').click()};
+ document.querySelectorAll('.opts .opt').forEach(b=>b.onclick=()=>{const x=spots.find(y=>y.id===b.dataset.id);document.querySelectorAll('.opts .opt').forEach(z=>z.classList.toggle('sel',z===b));pick(x.nom,x.lat,x.lon,x.id)});
+}
+function start(f){F=f;S={};st=0;show('wiz');render()}
+function render(){
+ const s=VS()[st],n=VS().length,last=st===n-1;
+ $('bar').innerHTML=VS().map((_,i)=>`<i class="${i<=st?'d':''}"></i>`).join('');
+ let h=`<small>Étape ${st+1} / ${n}</small><h2>${s.t}</h2>`;
+ if(s.type==='text')h+=`<input id="inp" maxlength="60" placeholder="${e(s.ph)}" inputmode="${s.im||'text'}" value="${e(S[s.k])}" autocomplete="off">`;
+ else if(s.type==='dt'){if(!S.date){const n=new Date(),p=x=>String(x).padStart(2,'0');S.date=n.getFullYear()+'-'+p(n.getMonth()+1)+'-'+p(n.getDate());S.time=p(n.getHours())+':'+p(n.getMinutes())}h+=`<div class="dt"><label>Date<input id="d1" type="date" value="${S.date}"></label><label>Heure<input id="d2" type="time" value="${S.time}"></label></div>`}
+ else if(s.type==='photo')h+=`<label class="btn ghost" style="display:block;text-align:center;margin-bottom:14px">📷 Prendre / choisir une photo<input id="ph" type="file" accept="image/*" hidden></label><img id="pv" class="pv ${S.photo?'':'hide'}" src="${S.photo||''}"><div class="hint">Optionnel · compressée pour ne pas encombrer ton stockage</div>`;
+ else if(s.type==='mesure')h+=[['T','📏','Taille','cm','taille'],['P','⚖️','Poids','kg','poids']].map(([a,ic,l,u,k])=>`<label class="chkrow"><input type="checkbox" id="c${a}" ${S['c'+a]?'checked':''}><span>${ic} ${l}</span></label><input id="i${a}" inputmode="decimal" maxlength="8" placeholder="${l} en ${u}" value="${e(S[k])}" autocomplete="off" style="margin:-4px 0 12px;${S['c'+a]?'':'display:none'}">`).join('')+'<div class="hint">Coche ce que tu as mesuré · saisis seulement le nombre</div>';
+ else if(s.type==='loc')h+=`<div class="srch"><input id="lci" placeholder="Ville, lac, rivière…" autocomplete="off"><button class="btn" id="lcg">OK</button></div><div id="lcr">${autoNote()}</div>${spots.length?'<div class="hint" style="text-align:left">Ou choisis un de tes spots :</div>':''}<div class="opts">${spots.map(x=>`<button class="opt ${S.locId===x.id?'sel':''}" data-id="${x.id}"><span class="ic">📍</span><div><b>${e(x.nom)}</b></div></button>`).join('')}</div>`;
+ else if(s.type==='area')h+=`<textarea id="inp" maxlength="300" placeholder="${e(s.ph)}">${e(S[s.k])}</textarea>`;
+ else h+=`<div class="opts ${s.cls||''}">`+(typeof s.o==='function'?s.o():s.o).map(o=>`<button class="opt ${S[s.k]===o[0]?'sel':''}" data-v="${e(o[0])}"><span class="ic">${o[1]}</span><div><b>${o[2]}</b>${o[3]?`<span class="s">${o[3]}</span>`:''}</div></button>`).join('')+'</div>';
+ if(S.auto&&['hpa','ciel','temp','dir','ventf'].includes(s.k))h+='<div class="hint">☁️ Pré-rempli par Open-Meteo, modifie si besoin.</div>';if(S.ciel==='Auto'&&S.autoOK&&s.k==='eau')h+=autoNote();$('q').innerHTML=h;
+ const nx=$('next');nx.textContent=last?'Valider':'Continuer';nx.classList.add('hide');
+ if(s.type){nx.classList.remove('hide');if(s.type==='dt'){$('d1').oninput=ev=>S.date=ev.target.value;$('d2').oninput=ev=>S.time=ev.target.value}else if(s.type==='photo')$('ph').onchange=pickPhoto;else if(s.type==='mesure')initMz();else if(s.type==='loc')initLoc();else $('inp').oninput=ev=>S[s.k]=ev.target.value}
+ else{if(S[s.k])nx.classList.remove('hide');
+  document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{S[s.k]=b.dataset.v;document.querySelectorAll('.opt').forEach(x=>x.classList.toggle('sel',x===b));
+   if(s.k==='modeV2'){S.autoOK=0;S.locName='';S.locId='';S.autoV2Note=''}if(s.k==='eau2'){S.clarte2=({clear:'clear',tint:'tint',mud:'mud',algae:'algae'})[S.eau2]||'unknown'}if(!last)setTimeout(()=>{st++;render()},220);else nx.classList.remove('hide')})}
+}
+$('create').onclick=()=>start(SORTIE);$('adv').onclick=()=>start(ADV);
+$('fish').onclick=()=>$('modal').classList.add('on');
+$('ok').onclick=()=>{$('modal').classList.remove('on');start(FISHON)};
+$('back').onclick=()=>{if(st>0){st--;render()}else show('home')};$('next').onclick=async()=>{const s=VS()[st];if(s.type==='loc'&&!S.autoOK)return toast('Choisis d’abord un lieu');if(s.type==='dt'&&F===FISHON)await autoMeteo();
+ if(s.k==='id'&&!(S.id||'').trim())S.id='Sortie du '+new Date().toLocaleDateString('fr-FR');
+ if(st<VS().length-1){st++;render()}else F.done()};
+function result(){
+ const sk=S.ciel==='Auto'?S.cielA:S.ciel,r=M[[sk,S.eau,S.pression].join('|')];
+ const wl=lab('vent',S.vent);
+ const note=r.v!==S.vent?`<div class="note">ℹ️ La matrice a été établie pour un vent « ${lab('vent',r.v).toLowerCase()} » avec ces conditions. Avec un vent ${wl.toLowerCase()}, adapte le poids du leurre et ta dérive.</div>`:'';
+ $('res').innerHTML=`<small style="color:var(--red);font:600 14px Rajdhani;letter-spacing:.2em">PLAN DE PÊCHE</small><h2>${e(S.id)}</h2>
+ <div class="recap">${S.ciel==='Auto'?`<span class="chip">📡 Auto · ${e(S.locName)}</span>`:''}${[['ciel',sk],['eau',S.eau],['vent',S.vent],['pression',S.pression]].map(([k,v])=>`<span class="chip">${lab(k,v)}</span>`).join('')}</div>
+ <div class="hero"><small>Stratégie</small><div class="num">${r.s}</div></div>
+ <div class="grid"><div class="cell w"><small>Leurre conseillé</small><div class="num">${r.l}</div></div>
+ <div class="cell"><small>Couleur</small><div class="num">${r.c}</div></div>
+ <div class="cell"><small>Animation</small><div class="num">${r.a}</div></div>
+ <div class="cell w"><small>Zone privilégiée</small><div class="num">📍 ${r.z}</div></div></div>${note}
+ <div class="acts"><button class="btn" id="again">Nouvelle sortie</button><button class="btn ghost" id="edit">Modifier les conditions</button><button class="btn ghost" id="h1">Accueil</button></div>`;
+ show('res');$('again').onclick=()=>start(SORTIE);$('h1').onclick=()=>show('home');$('edit').onclick=()=>{F=SORTIE;st=VS().length-1;show('wiz');render()};
+}
+function fishRes(){
+ if(!S.saved){const sp=spots.find(x=>x.id===S.spot);prises.unshift({...S,id:'p'+Date.now(),spotNom:sp?sp.nom:''});S.saved=1;if(!SV('cp_prises',prises)){prises[0].photo='';SV('cp_prises',prises);toast('Stockage plein : prise enregistrée sans photo. Exporte ton carnet pour libérer de la place.')}}
+
+ const d=new Date((S.date||'')+'T'+(S.time||'00:00')),dt=isNaN(d)?'':d.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+(S.time?' · '+S.time.replace(':','h'):'');
+ const v=t=>e(t&&String(t).trim()?t:'—');
+ const u=(t,x)=>{const n=String(t||'').replace(/[^\d.,\-]/g,'');return n?e(n)+' '+x:'—'};
+ const mzl=[[S.cT,'Taille',S.taille,'cm'],[S.cP,'Poids',S.poids,'kg']].filter(m=>m[0]&&num(m[2])),mz=mzl.map(m=>`<div class="cell${mzl.length<2?' w':''}"><small>${m[1]}</small><div class="num">${u(m[2],m[3])}</div></div>`).join('');
+ $('fres').innerHTML=`<div class="snap"><small class="k">FISH ON · ${dt}</small><div class="num big">${e(S.poisson)}</div>${S.photo?`<img class="pv" src="${S.photo}">`:''}
+ <div class="grid">${mz}<div class="cell w"><small>Poste</small><div class="num">📍 ${v(S.poste)}</div></div><div class="cell w"><small>Leurre</small><div class="num">${e(S.leurre)}</div></div>${S.ref?`<div class="cell w"><small>Réf. leurre</small><div class="num">${e(S.ref)}</div></div>`:''}
+ <div class="cell"><small>Animation</small><div class="num">${e(S.anim)}</div></div>
+ <div class="cell"><small>Couleur</small><div class="num">${v(S.couleur)}</div></div>
+ <div class="cell"><small>Météo</small><div class="num">${lab('ciel',S.ciel)}</div></div>
+ <div class="cell"><small>Température</small><div class="num">${u(S.temp,'°C')}</div></div>
+ <div class="cell"><small>Pression</small><div class="num">${u(S.hpa,'hPa')}</div></div>
+ <div class="cell"><small>Vent</small><div class="num">${e(S.dir)} · ${u(S.ventf,'km/h')}</div></div>
+ <div class="cell w"><small>Débit / hauteur d’eau</small><div class="num">💧 ${v(S.debit)}</div>${S.station&&/m³/.test(S.debit||'')?`<small style="display:block;text-transform:none;letter-spacing:0;font:400 13px Inter;margin-top:2px">${e(S.station)}</small>`:''}</div><div class="cell w"><small>Commentaires</small><div class="cmt">${v(S.note)}</div></div></div>
+ <div class="brand">🎣 Compagnon Pêche</div></div>
+ <div class="hint">✅ Prise enregistrée dans ton carnet.</div>
+ <div class="acts"><button class="btn alt" id="again2">Nouvelle prise</button><button class="btn ghost" id="lg2">Voir le carnet</button><button class="btn ghost" id="h2">Accueil</button></div>`;
+ show('fres');$('again2').onclick=()=>$('fish').click();$('h2').onclick=()=>show('home');$('lg2').onclick=openLog;
+}
+
+/* ===== Stockage ===== */
+const LS=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(_){return d}};
+const SV=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(_){return false}};
+let spots=LS('cp_spots',[]),prises=LS('cp_prises',[]),MT=LS('cp_city',null),days=7,chs=[],LM,LG,PM,PEND,LF='';
+const toast=m=>{const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3500)};
+const geo=async q=>{
+ const a=[fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=6&language=fr&format=json').then(r=>r.json()).then(j=>(j.results||[]).map(r=>({name:r.name+(r.admin1?', '+r.admin1:''),lat:r.latitude,lon:r.longitude}))),
+  fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&accept-language=fr&q='+encodeURIComponent(q)).then(r=>r.json()).then(j=>j.map(r=>({name:r.display_name.split(',').slice(0,3).join(','),lat:+r.lat,lon:+r.lon})))];
+ const r=await Promise.allSettled(a);
+ if(r.every(x=>x.status==='rejected'))throw 0;
+ return r.flatMap(x=>x.value||[]).filter((p,i,z)=>z.findIndex(q=>Math.abs(q.lat-p.lat)<.03&&Math.abs(q.lon-p.lon)<.03)===i);
+};
+async function search(inp,box,cb){
+ const q=$(inp).value.trim(),b=$(box);if(q.length<2)return toast('Tape au moins 2 lettres');
+ b.innerHTML='<div class="hint">Recherche…</div>';
+ try{const r=await geo(q);
+  if(!r.length){b.innerHTML='<div class="note">Aucun résultat pour « '+e(q)+' ». Essaie un autre nom.</div>';return}
+  if(r.length===1){b.innerHTML='';return cb(r[0])}
+  b.innerHTML=r.map((x,i)=>`<button class="opt" data-i="${i}"><div><b style="font-size:17px">${e(x.name)}</b></div></button>`).join('');
+  b.onclick=ev=>{const c=ev.target.closest('[data-i]');if(c){b.innerHTML='';cb(r[c.dataset.i])}};
+ }catch(_){b.innerHTML='<div class="note">⚠️ Recherche impossible : connexion bloquée ou hors ligne.</div>'}
+}
+
+/* ===== Débits Hub’Eau (Multi-stations élargies à 40km pour inclure barrages et fleuves majeurs) ===== */
+const HB='https://hubeau.eaufrance.fr/api/v2/hydrometrie/';
+const km=(a,b,c,d)=>{const r=Math.PI/180,x=Math.sin((c-a)*r/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin((d-b)*r/2)**2;return 12742*Math.asin(Math.sqrt(x))};
+const fq=x=>x>=100?String(Math.round(x)):x>=10?x.toFixed(1):x.toFixed(2);
+
+const stC={};
+async function getStationsProches(lat,lon){
+ const k=lat+','+lon;if(stC[k])return stC[k];
+ try{const j=await(await fetch(`${HB}referentiel/stations?latitude=${lat}&longitude=${lon}&distance=40&size=100`)).json();
+  return stC[k]=(j.data||[]).filter(x=>x.en_service!==false&&x.latitude_station!=null&&!/supprim/i.test(x.libelle_station||'')).map(x=>({c:x.code_station,n:x.libelle_station,d:km(lat,lon,x.latitude_station,x.longitude_station)})).sort((a,b)=>a.d-b.d)}catch(_){return[]}
+}
+const orderSt=(l,sp)=>sp&&sp.sc?[...l.filter(x=>x.c===sp.sc),...l.filter(x=>x.c!==sp.sc)]:l;
+async function getMesuresStation(c,q='size=192'){
+ try{const j=await(await fetch(`${HB}observations_tr?code_entite=${c}&grandeur_hydro=Q&sort=desc&${q}`)).json();return j.data||[]}catch(_){return[]}
+}
+async function stationAvecDebit(lat,lon,sp,q){for(const st of orderSt(await getStationsProches(lat,lon),sp).slice(0,6)){const d=await getMesuresStation(st.c,q);if(d.length)return{st,d}}return null}
+
+document.querySelectorAll('[data-home]').forEach(b=>b.onclick=()=>show('home'));
+$('nmet').onclick=openMeteo;$('nmap').onclick=openMap;$('nlog').onclick=openLog;
+
+/* ===== Photo (compression) ===== */
+const num=t=>String(t||'').replace(/[^\d.,\-]/g,''),un=(t,x)=>num(t)?num(t)+' '+x:'',dbt=t=>/^[\d.,\s]+$/.test(t||'')?String(t).trim()+' m³/s':(t||'');
+function initMz(){[['T','taille'],['P','poids']].forEach(([a,k])=>{const c=$('c'+a),i=$('i'+a);c.onchange=()=>{S['c'+a]=c.checked;i.style.display=c.checked?'':'none';if(c.checked)i.focus();else S[k]=''};i.oninput=()=>S[k]=i.value})}
+let CR={},dr;
+function pickPhoto(ev){const f=ev.target.files[0];if(!f)return;const im=new Image();im.onload=()=>{CR={im,r:im.width/im.height,q:im.width/im.height,z:1,x:0,y:0};$('crz').value=1;$('crop').classList.add('on');
+ $('crr').innerHTML=[['Original',CR.r],['4:3',4/3],['1:1',1],['3:4',.75],['16:9',16/9]].map((a,i)=>`<span class="chip ${i?'':'on'}" data-r="${a[1]}">${a[0]}</span>`).join('');sizeCrop()};im.src=URL.createObjectURL(f);ev.target.value=''}
+function sizeCrop(){const mw=Math.min(innerWidth-32,440),mh=innerHeight*.5;let w=mw,h=w/CR.q;if(h>mh){h=mh;w=h*CR.q}CR.w=$('cv').width=Math.round(w);CR.h=$('cv').height=Math.round(h);drawCrop()}
+function drawCrop(){const{im,w,h}=CR,s=Math.max(w/im.width,h/im.height)*CR.z,dw=im.width*s,dh=im.height*s,mx=(dw-w)/2,my=(dh-h)/2;CR.x=Math.max(-mx,Math.min(mx,CR.x));CR.y=Math.max(-my,Math.min(my,CR.y));const g=$('cv').getContext('2d');g.clearRect(0,0,w,h);g.drawImage(im,(w-dw)/2+CR.x,(h-dh)/2+CR.y,dw,dh)}
+const closeCrop=()=>{$('crop').classList.remove('on');if(CR.im)URL.revokeObjectURL(CR.im.src)};
+$('crr').onclick=ev=>{const c=ev.target.closest('[data-r]');if(!c)return;CR.q=+c.dataset.r;CR.x=CR.y=0;document.querySelectorAll('#crr .chip').forEach(x=>x.classList.toggle('on',x===c));sizeCrop()};
+$('crz').oninput=ev=>{CR.z=+ev.target.value;drawCrop()};
+$('cv').onpointerdown=ev=>{dr=[ev.clientX,ev.clientY];$('cv').setPointerCapture(ev.pointerId)};
+$('cv').onpointermove=ev=>{if(!dr)return;CR.x+=ev.clientX-dr[0];CR.y+=ev.clientY-dr[1];dr=[ev.clientX,ev.clientY];drawCrop()};
+$('cv').onpointerup=$('cv').onpointercancel=()=>dr=null;
+$('crx').onclick=closeCrop;
+$('cro').onclick=()=>{const{im,w,h}=CR,k=720/Math.max(w,h),o=document.createElement('canvas');o.width=Math.round(w*k);o.height=Math.round(h*k);const s=Math.max(w/im.width,h/im.height)*CR.z*k,dw=im.width*s,dh=im.height*s;o.getContext('2d').drawImage(im,(o.width-dw)/2+CR.x*k,(o.height-dh)/2+CR.y*k,dw,dh);S.photo=o.toDataURL('image/jpeg',.6);$('pv').src=S.photo;$('pv').classList.remove('hide');closeCrop()};
+
+/* ===== Météo auto pour une prise (archive ou prévision) ===== */
+async function autoMeteo(){
+ const sp=spots.find(x=>x.id===S.spot);if(!sp||!S.date)return;const key=sp.id+S.date+S.time;if(S.key===key)return;S.key=key;
+ const nx=$('next');nx.textContent='Météo et débit…';nx.disabled=true;
+ try{
+  const api=(Date.now()-new Date(S.date))/864e5>80?'archive-api.open-meteo.com/v1/archive':'api.open-meteo.com/v1/forecast';
+  const h=(await(await fetch(`https://${api}?latitude=${sp.lat}&longitude=${sp.lon}&start_date=${S.date}&end_date=${S.date}&hourly=temperature_2m,pressure_msl,wind_speed_10m,wind_direction_10m,cloud_cover,precipitation&wind_speed_unit=kmh&timezone=auto`)).json()).hourly,i=+(S.time||'12:00').slice(0,2);
+  S.temp=String(Math.round(h.temperature_2m[i]*10)/10);S.hpa=String(Math.round(h.pressure_msl[i]));S.ventf=String(Math.round(h.wind_speed_10m[i]));
+  S.dir=DIR[Math.round(h.wind_direction_10m[i]/22.5)%16][0];
+  S.ciel=h.precipitation[i]>.5?'Orageux / Sombre':h.cloud_cover[i]>60?'Couvert':'Soleil';S.auto=1;
+ }catch(_){S.key=''}
+ try{
+  S.debit=S.station='';const t=new Date(S.date+'T'+(S.time||'12:00'));
+  if(t<Date.now()&&Date.now()-t<29*864e5){
+   const z=x=>new Date(x).toISOString().slice(0,19)+'Z',r=await stationAvecDebit(sp.lat,sp.lon,sp,`size=6&date_debut_obs=${z(t-72e5)}&date_fin_obs=${z(+t+9e5)}`);
+   if(r){S.debit=fq(r.d[0].resultat_obs/1000)+' m³/s';S.station=r.st.n}
+  }
+ }catch(_){}
+ nx.disabled=false;
+}
+
+/* ===== Écran Météo ===== */
+function openMeteo(){show('met');drawMChips();if(MT)loadMeteo()}
+function drawMChips(){
+ $('mspots').innerHTML=spots.map(x=>`<span class="chip ${MT&&MT.id===x.id?'on':''}" data-id="${x.id}">📍 ${e(x.nom)}</span>`).join('');
+ $('mdays').innerHTML=[1,3,7,14].map(n=>`<span class="chip ${n===days?'on':''}" data-d="${n}">${n} jour${n>1?'s':''}</span>`).join('');
+}
+$('mspots').onclick=ev=>{const c=ev.target.closest('[data-id]');if(!c)return;const x=spots.find(y=>y.id===c.dataset.id);setCity({id:x.id,name:x.nom,lat:x.lat,lon:x.lon})};
+$('mdays').onclick=ev=>{const c=ev.target.closest('[data-d]');if(c){days=+c.dataset.d;drawMChips();loadMeteo()}};$('go').onclick=()=>search('city','gres',g=>setCity({name:g.name,lat:g.lat,lon:g.lon}));
+$('city').onkeydown=ev=>{if(ev.key==='Enter')$('go').click()};
+function setCity(c){MT=c;SV('cp_city',c);drawMChips();loadMeteo()}
+const mode=a=>{const m={};a.forEach(x=>m[x]=(m[x]||0)+1);return+Object.keys(m).sort((a,b)=>m[b]-m[a]||b-a)[0]};
+const WM=c=>c===0?['☀️','Ensoleillé']:c===1?['🌤️','Plutôt dégagé']:c===2?['⛅','Éclaircies']:c===3?['☁️','Couvert']:c<=48?['🌫️','Brouillard']:c<=57?['🌦️','Bruine']:c<=65?['🌧️',c===61?'Pluie faible':c===65?'Forte pluie':'Pluie']:c<=67?['🌧️','Pluie verglaçante']:c<=77?['🌨️','Neige']:c<=82?['🌦️','Averses']:c<=86?['🌨️','Averses de neige']:['⛈️','Orage'];
+const wmh=(c,d)=>!d&&c<=1?['🌙',c?'Plutôt dégagé':'Nuit claire']:WM(c);
+const tl=t=>{const d=new Date(t),h=d.getHours();return h===0?d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'}):h%6===0?h+'h':''};
+const arrows=D=>({id:'arr',afterDatasetsDraw(c){const x=c.ctx;x.save();x.fillStyle='#f2f4f8';x.font='15px sans-serif';x.textAlign='center';c.getDatasetMeta(0).data.forEach((p,i)=>{if(i%3)return;x.save();x.translate(p.x,c.chartArea.top+9);x.rotate((D[i]+180)*Math.PI/180);x.fillText('↑',0,5);x.restore()});x.restore()}});
+async function loadMeteo(){
+ if(!MT)return;$('mout').innerHTML='<div class="hint">Chargement…</div>';
+ try{
+  const h=(await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${MT.lat}&longitude=${MT.lon}&hourly=temperature_2m,pressure_msl,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,precipitation,is_day&wind_speed_unit=kmh&past_days=1&forecast_days=${days}&timezone=auto`)).json()).hourly;
+  const n=new Date(),pd=x=>String(x).padStart(2,'0'),now=Math.max(0,h.time.indexOf(`${n.getFullYear()}-${pd(n.getMonth()+1)}-${pd(n.getDate())}T${pd(n.getHours())}:00`)),P=h.pressure_msl,f=x=>(x>0?'+':'')+x.toFixed(1);
+  const W=Math.max(h.time.length*13,320),today=h.time[now].slice(0,10),by={};
+  h.time.forEach((t,i)=>(by[t.slice(0,10)]=by[t.slice(0,10)]||[]).push(i));
+  const cards='<div class="chips">'+Object.entries(by).filter(([d])=>d>=today).map(([d,ix])=>{
+   const cs=ix.filter(i=>{const H=+h.time[i].slice(11,13);return H>=8&&H<=20}).map(i=>h.weather_code[i]),ry=cs.filter(c=>c>=51),dry=cs.filter(c=>c<51),c=ry.length>=3?mode(ry):mode(dry.length?dry:cs),w=WM(c),T=ix.map(i=>h.temperature_2m[i]),pr=ix.reduce((a,i)=>a+(h.precipitation[i]||0),0);
+   return `<div class="dc"><small>${new Date(d+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'})}</small><span class="di">${w[0]}</span><b>${w[1]}</b><small>${Math.round(Math.min(...T))}° / ${Math.round(Math.max(...T))}°</small><small>💧 ${pr.toFixed(1)} mm</small></div>`}).join('')+'</div>';
+  $('mout').innerHTML=`<div style="color:var(--mut);margin-bottom:8px">📍 ${e(MT.name)}</div>
+  <div class="note" style="margin:0 0 12px">🧭 Pression ${Math.round(P[now])} hPa · ${f(P[now]-P[Math.max(0,now-3)])} sur les 3 h passées · ${f((P[Math.min(P.length-1,now+3)]||P[now])-P[now])} prévu sur 3 h</div>
+  ${cards}<div class="cbox" id="dbox">
+    <div id="dselect" style="margin-bottom:8px"></div>
+    <div id="dtxt" style="line-height:1.5">💧 Recherche des stations de débit…</div>
+    <div class="ch" style="height:150px;margin-top:8px"><canvas id="c4"></canvas></div>
+  </div>
+  <div class="cbox sc" id="sc"><div style="width:${W}px"><h3>Pression (hPa)</h3><div class="ch"><canvas id="c1"></canvas></div><h3>Vent (km/h) et direction</h3><div class="ch"><canvas id="c2"></canvas></div><h3>Pluie (mm) et ciel</h3><div class="ch"><canvas id="c5"></canvas></div><h3>Température (°C)</h3><div class="ch"><canvas id="c3"></canvas></div></div></div>
+  <div class="hint">Données Open-Meteo · fais défiler à l’horizontale · flèches = sens vers lequel souffle le vent · icônes du ciel toutes les 3 h</div>`;
+  chs.forEach(c=>c.destroy());chs=[];if(c4){c4.destroy();c4=null}
+  const opt=(u,extra)=>({responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>new Date(h.time[i[0].dataIndex]).toLocaleString('fr-FR',{weekday:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}),label:c=>(c.dataset.label||'')+' '+c.parsed.y+' '+u,...extra}}},scales:{x:{ticks:{autoSkip:false,maxRotation:0,color:'#9aa3b2',callback:v=>tl(h.time[v])},grid:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#9aa3b2'},grid:{color:'rgba(255,255,255,.08)'},grace:'12%'}}});
+  const line=(id,d,col,u)=>chs.push(new Chart($(id),{type:'line',data:{labels:h.time,datasets:[{data:d,borderColor:col,backgroundColor:col+'22',fill:true,pointRadius:0,tension:.3,borderWidth:2}]},options:opt(u)}));
+  line('c1',P,'#ff3b4e','hPa');
+  const D=h.wind_direction_10m;
+  chs.push(new Chart($('c2'),{type:'bar',data:{labels:h.time,datasets:[{label:'Vent',data:h.wind_speed_10m,backgroundColor:'#7a5cffcc',order:2},{type:'line',label:'Rafales',data:h.wind_gusts_10m,borderColor:'#ffc46b',pointRadius:0,tension:.3,borderWidth:1.5,order:1}]},options:opt('km/h',{afterLabel:c=>c.datasetIndex?'':'Vent de '+DIR[Math.round(D[c.dataIndex]/22.5)%16][0]}),plugins:[arrows(D)]}));
+  line('c3',h.temperature_2m,'#2ecc71','°C');
+  const o5=opt('mm',{afterLabel:c=>wmh(h.weather_code[c.dataIndex],h.is_day[c.dataIndex])[1]});o5.scales.y.grace='45%';o5.scales.y.beginAtZero=true;
+  chs.push(new Chart($('c5'),{type:'bar',data:{labels:h.time,datasets:[{label:'Pluie',data:h.precipitation,backgroundColor:'#2b9cffcc'}]},options:o5,plugins:[{id:'ico',afterDatasetsDraw(c){const x=c.ctx;x.save();x.font='17px sans-serif';x.textAlign='center';c.getDatasetMeta(0).data.forEach((p,i)=>{if(i%3===0)x.fillText(wmh(h.weather_code[i],h.is_day[i])[0],p.x,c.chartArea.top+14)});x.restore()}}]}));
+  $('sc').scrollLeft=Math.max(0,now*13-40);meteoDebit(MT.lat, MT.lon, MT.id);
+ }catch(_){$('mout').innerHTML='<div class="note">Impossible de charger la météo (connexion ?).</div>'}
+}
+
+let c4;
+async function meteoDebit(lat,lon,id,code){
+ const tok=MT;if(!tok)return;const sp=spots.find(x=>x.id===id);
+ try{
+  const sts=await getStationsProches(lat,lon);
+  if(tok!==MT||!$('dtxt'))return;
+  if(!sts.length){$('dtxt').textContent='💧 Aucune station de débit à moins de 40 km.';$('c4').parentNode.classList.add('hide');return}
+  const sel=[code,sp&&sp.sc].find(c=>c&&sts.some(x=>x.c===c))||sts[0].c;
+  $('dselect').innerHTML=`<select id="stSelect" style="width:100%;padding:10px;border-radius:10px;background:var(--card);color:var(--tx);border:1px solid var(--line);font-size:14px">`+sts.map(x=>`<option value="${x.c}" ${x.c===sel?'selected':''}>${e(x.n)} (${x.d.toFixed(1)} km)</option>`).join('')+'</select>';
+  $('stSelect').onchange=ev=>{if(sp){sp.sc=ev.target.value;SV('cp_spots',spots)}meteoDebit(lat,lon,id,ev.target.value)};
+  if(c4){c4.destroy();c4=null}
+  $('dtxt').textContent='💧 Chargement…';
+  const d=await getMesuresStation(sel);
+  if(tok!==MT||!$('dtxt'))return;
+  const box=$('c4').parentNode;
+  if(!d.length){$('dtxt').textContent='💧 Pas de mesure de débit pour cette station (hauteur seule ?). Essaie-en une autre.';box.classList.add('hide');return}
+  box.classList.remove('hide');
+  const q=d[0].resultat_obs/1000,o=d.find(x=>new Date(x.date_obs)<=new Date(d[0].date_obs)-108e5),k=o?q/(o.resultat_obs/1000):1,r=[...d].reverse();
+  $('dtxt').innerHTML=`💧 <b>${fq(q)} m³/s</b> ${k>1.05?'↗ en hausse':k<.95?'↘ en baisse':'➡ stable'} · ${e(sts.find(x=>x.c===sel).n)}`;
+  c4=new Chart($('c4'),{type:'line',data:{labels:r.map(x=>x.date_obs),datasets:[{data:r.map(x=>x.resultat_obs/1000),borderColor:'#2b9cff',backgroundColor:'#2b9cff22',fill:true,pointRadius:0,tension:.3,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>new Date(r[i[0].dataIndex].date_obs).toLocaleString('fr-FR',{weekday:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}),label:c=>c.parsed.y.toFixed(2)+' m³/s'}}},scales:{x:{ticks:{autoSkip:false,maxRotation:0,color:'#9aa3b2',callback:v=>new Date(r[v].date_obs).getMinutes()?'':tl(r[v].date_obs)},grid:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#9aa3b2'},grid:{color:'rgba(255,255,255,.08)'}}}}});
+ }catch(_){if(tok===MT&&$('dtxt'))$('dtxt').textContent='💧 Débit indisponible pour le moment.'}
+}
+
+/* ===== Écran Carte / Spots ===== */
+const PIN=L.divIcon({html:'📍',className:'pin',iconSize:[28,28],iconAnchor:[14,26],popupAnchor:[0,-24]});
+function openMap(){
+ show('mapS');
+ if(!LM){
+  LM=L.map('lmap').setView([45.2,4.2],10);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(LM);
+  LG=L.layerGroup().addTo(LM);
+  LM.on('click',ev=>{PEND=ev.latlng;if(PM)PM.remove();PM=L.marker(PEND,{icon:PIN,opacity:.6}).addTo(LM);$('spform').classList.remove('hide');$('mh').classList.add('hide');$('spn').value='';$('spn').focus()});
+  if(spots.length)LM.fitBounds(spots.map(x=>[x.lat,x.lon]),{padding:[40,40],maxZoom:13})}
+ setTimeout(()=>{LM.invalidateSize();drawSpots()},60);
+}
+function drawSpots(){
+ LG.clearLayers();
+ spots.forEach(x=>{const n=prises.filter(p=>p.spot===x.id).length;
+  L.marker([x.lat,x.lon],{icon:PIN}).addTo(LG).bindPopup(`<b>🎣 ${e(x.nom)}</b><br>${n} prise${n>1?'s':''}<div id="pd${x.id}" style="margin:6px 0;max-width:210px">💧 débit…</div><a href="#" onclick="return spotMeteo('${x.id}')">☁️ Météo</a> · <a href="#" onclick="return delSpot('${x.id}',this)">🗑️ Supprimer</a>`).on('popupopen',async()=>{
+   const z=document.getElementById('pd'+x.id);
+   try{
+    const r=await stationAvecDebit(x.lat,x.lon,x,'size=24');
+    z.innerHTML=r?`💧 <b>${fq(r.d[0].resultat_obs/1000)} m³/s</b><br><small>${e(r.st.n)}</small>`:'💧 Pas de station avec mesure de débit à proximité';
+   }catch(_){z.textContent='💧 Débit indisponible'}})});
+}
+function spotMeteo(id){const x=spots.find(y=>y.id===id);MT={id:x.id,name:x.nom,lat:x.lat,lon:x.lon};SV('cp_city',MT);openMeteo();return false}
+function delSpot(id,a){if(!a.dataset.arm){a.dataset.arm=1;a.textContent='⚠️ Confirmer ?';return false}spots=spots.filter(x=>x.id!==id);SV('cp_spots',spots);LM.closePopup();drawSpots();return false}
+function endForm(){$('spform').classList.add('hide');$('mh').classList.remove('hide');if(PM){PM.remove();PM=null}}
+$('spc').onclick=endForm;
+$('sps').onclick=()=>{const nom=$('spn').value.trim();if(!nom||!PEND)return;spots.push({id:'s'+Date.now(),nom,lat:+PEND.lat.toFixed(5),lon:+PEND.lng.toFixed(5)});if(!SV('cp_spots',spots))toast('Stockage plein');endForm();drawSpots()};
+$('mgo').onclick=()=>search('mq','mres',g=>LM.setView([g.lat,g.lon],12));
+$('mq').onkeydown=ev=>{if(ev.key==='Enter')$('mgo').click()};
+$('loc').onclick=()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>LM.setView([p.coords.latitude,p.coords.longitude],14),()=>toast('Position indisponible')):0;
+
+/* ===== Carnet de prises ===== */
+function openLog(){show('log');renderLog()}
+const fd=p=>new Date(p.date+'T'+(p.time||'00:00')).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})+(p.time?' · '+p.time.replace(':','h'):'');
+function renderLog(){
+ const fs=[...new Set(prises.map(p=>p.poisson))];
+ $('lf').innerHTML=['',...fs].map(x=>`<span class="chip ${x===LF?'on':''}" data-f="${e(x)}">${x?e(x):'Tout ('+prises.length+')'}</span>`).join('');
+ const L2=prises.filter(p=>!LF||p.poisson===LF).sort((a,b)=>((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||'')));
+ $('ll').innerHTML=L2.length?L2.map(p=>{
+  const kv=[['Taille',un(p.cT&&p.taille,'cm')],['Poids',un(p.cP&&p.poids,'kg')],['Leurre',p.leurre],['Réf.',p.ref],['Animation',p.anim],['Couleur',p.couleur],['Temp.',p.temp&&p.temp+' °C'],['Pression',p.hpa&&p.hpa+' hPa'],['Vent',((p.dir||'')+' '+(p.ventf?p.ventf+' km/h':'')).trim()],['Débit',dbt(p.debit)],['Météo',p.ciel],['Poste',p.poste]].filter(x=>x[1]);
+  return `<div class="cell lg" data-id="${p.id}"><div class="lh">${p.photo?`<img src="${p.photo}" alt="">`:'<span class="ph">🐟</span>'}<div><div class="num">${e(p.poisson)}</div><small style="color:var(--mut)">${fd(p)}${p.spotNom?' · 📍 '+e(p.spotNom):''}</small></div></div>
+  <div class="det hide">${p.photo?`<img class="pv" src="${p.photo}" alt="">`:''}<div class="recap" style="margin-top:0">${kv.map(x=>`<span class="chip"><b>${x[0]}</b> ${e(x[1])}</span>`).join('')}</div>${p.note?`<div class="cmt" style="white-space:pre-wrap;margin-bottom:12px">${e(p.note)}</div>`:''}<button class="btn ghost del" style="padding:12px">🗑️ Supprimer</button></div></div>`}).join(''):'<div class="hint">Aucune prise pour l’instant. Lance « Fish On » depuis l’accueil.</div>';
+}
+$('lf').onclick=ev=>{const c=ev.target.closest('[data-f]');if(c){LF=c.dataset.f;renderLog()}};
+$('ll').onclick=ev=>{const c=ev.target.closest('.lg');if(!c)return;if(ev.target.closest('.del')){const b=ev.target.closest('.del');if(!b.dataset.arm){b.dataset.arm=1;b.textContent='⚠️ Confirmer la suppression ?';return}prises=prises.filter(p=>p.id!==c.dataset.id);SV('cp_prises',prises);renderLog();return}c.querySelector('.det').classList.toggle('hide')};
+$('exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({spots,prises})],{type:'application/json'}));a.download='carnet-peche-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
+$('imp').onclick=()=>$('impf').click();
+$('impf').onchange=async ev=>{try{const d=JSON.parse(await ev.target.files[0].text()),m=(a,b)=>[...b.filter(x=>!a.some(y=>y.id===x.id)),...a];spots=m(spots,d.spots||[]);prises=m(prises,d.prises||[]);SV('cp_spots',spots);SV('cp_prises',prises);renderLog();toast('Import terminé')}catch(_){toast('Fichier invalide')}};
+
+/* ===== Score indice météo (carnassiers aux leurres) ===== */
+const RD=Math.PI/180,E0=RD*23.4397,dd=ms=>ms/864e5-.5+2440588-2451545;
+function moonC(d){const L=RD*(218.316+13.176396*d),M=RD*(134.963+13.064993*d),F=RD*(93.272+13.22935*d),l=L+RD*6.289*Math.sin(M),b=RD*5.128*Math.sin(F);return{ra:Math.atan2(Math.sin(l)*Math.cos(E0)-Math.tan(b)*Math.sin(E0),Math.cos(l)),dec:Math.asin(Math.sin(b)*Math.cos(E0)+Math.cos(b)*Math.sin(E0)*Math.sin(l)),dist:385001-20905*Math.cos(M)}}
+function moonAlt(ms,lat,lon){const d=dd(ms),c=moonC(d),H=RD*(280.16+360.9856235*d)+RD*lon-c.ra,p=RD*lat;return Math.asin(Math.sin(p)*Math.sin(c.dec)+Math.cos(p)*Math.cos(c.dec)*Math.cos(H))}
+function moonPh(ms){const d=dd(ms),m=moonC(d),M=RD*(357.5291+.98560028*d),Ls=M+RD*(1.9148*Math.sin(M)+.02*Math.sin(2*M)+.0003*Math.sin(3*M))+RD*102.9372+Math.PI,sra=Math.atan2(Math.sin(Ls)*Math.cos(E0),Math.cos(Ls)),sdec=Math.asin(Math.sin(E0)*Math.sin(Ls)),sd=149598000,ph=Math.acos(Math.sin(sdec)*Math.sin(m.dec)+Math.cos(sdec)*Math.cos(m.dec)*Math.cos(sra-m.ra)),inc=Math.atan2(sd*Math.sin(ph),m.dist-sd*Math.cos(ph)),ang=Math.atan2(Math.cos(sdec)*Math.sin(sra-m.ra),Math.sin(sdec)*Math.cos(m.dec)-Math.cos(sdec)*Math.sin(m.dec)*Math.cos(sra-m.ra));return{f:(1+Math.cos(inc))/2,p:.5+.5*inc*(ang<0?-1:1)/Math.PI}}
+let SI=LS('cp_si',null),SD=0,SJ=null;
+const SM=15*6e4,p2=n=>String(n).padStart(2,'0'),hm=(ms,o)=>{const d=new Date(ms+o*1e3);return p2(d.getUTCHours())+'h'+p2(d.getUTCMinutes())};
+function dayScores(j,di){
+ const off=j.utc_offset_seconds,td=x=>Date.parse(x+':00Z')-off*1e3,h=j.hourly,T=h.time.map(td),D=j.daily,t0=td(D.time[di]+'T00:00'),sr=td(D.sunrise[di]),ss=td(D.sunset[di]),lo=sr-18e5,hi=ss+18e5,H1=36e5;
+ const lerp=(a,t)=>{const f=(t-T[0])/H1,i=Math.max(0,Math.min(T.length-2,Math.floor(f))),r=f-i;return a[i]*(1-r)+a[i+1]*r},idx=t=>Math.max(0,Math.min(T.length-1,Math.floor((t-T[0])/H1)));
+ const al=[];for(let t=t0-2*H1;t<=t0+26*H1;t+=3e5)al.push([t,moonAlt(t,SI.lat,SI.lon)]);
+ const maj=[],mr=[],ms=[];
+ for(let k=1;k<al.length-1;k++){const a=al[k-1][1],b=al[k][1],c=al[k+1][1];if(b>a&&b>=c||b<a&&b<=c)maj.push(al[k][0]);if(a<0&&b>=0)mr.push(al[k][0]);if(a>=0&&b<0)ms.push(al[k][0])}
+ const mi=mr.concat(ms),near=(a,w,t)=>a.some(x=>Math.abs(t-x)<=w),st=[];
+ for(let k=0;k<96;k++){
+  const t=t0+k*SM,tm=t+SM/2,i=idx(tm),cl=h.cloud_cover[i]||0,cd=h.weather_code[i]||0,P=lerp(h.pressure_msl,tm),dP=P-lerp(h.pressure_msl,tm-3*H1),V=lerp(h.wind_speed_10m,tm),
+   pr=h.precipitation[Math.min(i+1,T.length-1)]||0,pv=(h.precipitation[Math.max(0,i-2)]||0)+(h.precipitation[Math.max(0,i-1)]||0)+(h.precipitation[i]||0),
+   dawn=Math.abs(tm-sr)<=H1||Math.abs(tm-ss)<=H1,noon=Math.abs(tm-(sr+ss)/2)<3*H1,n={};
+  n.s=tm<lo||tm>hi?5:dawn?10:(cl>80||cd===45||cd===48)?9:cl>=40?6:noon?2:4;
+  n.p=dP<-3?5:dP<=-1?10:dP>3?3:dP>=1?5:(P>1025?3:P<1005?5:P>=1012&&P<=1018?8:7);
+  n.l=near(maj,H1,tm)?10:near(mi,27e5,tm)?7:3;
+  n.v=V>35?1:V>25?6:V>=12?10:V>=6?7:V>=5?5:3;
+  n.r=cd>=95||pr>4?0:pr>1.5?3:pr>.1?10:pv>.3?8:5;
+  let sc=n.s*.3+n.p*.25+n.l*.2+n.v*.15+n.r*.1;const bo=[];
+  if(tm>=ss-54e5&&tm<=ss+18e5||tm>=sr-18e5&&tm<=sr+54e5){sc+=1.5;bo.push('coup du '+(tm>(sr+ss)/2?'soir':'matin'))}
+  if(V>15&&cl>80){sc+=1;bo.push('vent + ciel couvert')}
+  if(n.s===2&&V<5){sc-=2;bo.push('plein soleil sans vent')}
+  st.push({t,tm,s:Math.max(0,Math.min(10,sc)),n,V,dP,bo,legal:t+SM>lo&&t<hi});
+ }
+ const hr=[];for(let k=0;k<24;k++){const a=st.slice(k*4,k*4+4),i=idx(t0+k*H1),c=t0+k*H1+H1/2;hr.push({k,s:a.reduce((x,y)=>x+y.s,0)/4,lg:a.filter(x=>x.legal).length>=2,T:h.temperature_2m[i],V:h.wind_speed_10m[i],D:h.wind_direction_10m[i],P:h.pressure_msl[i],R:h.precipitation[Math.min(i+1,T.length-1)]||0,C:h.weather_code[i],dy:c>sr&&c<ss})}
+ return{st,hr,sr,ss,lo,hi,mr:mr.filter(x=>x>=t0&&x<t0+24*H1),ms:ms.filter(x=>x>=t0&&x<t0+24*H1),ph:moonPh(t0+12*H1),off,t0};
+}
+const ql=x=>x>=7.5?'Excellent':x>=6?'Très bon':x>=4.5?'Correct':x>=3?'Moyen':'Faible';
+function whySI(x,sr,ss){const n=x.n,r=[];
+ if(n.s===10)r.push((x.tm>(sr+ss)/2?'coucher':'lever')+' du soleil');else if(n.s===9)r.push('ciel couvert');
+ if(n.l===10)r.push('lune au zénith / nadir');else if(n.l===7)r.push('lever ou coucher de lune');
+ if(n.p===10)r.push(`pression en baisse progressive (${x.dP.toFixed(1)} hPa/3 h)`);else if(n.p>=8)r.push('pression stable');
+ if(n.v===10)r.push(`vent modéré (${Math.round(x.V)} km/h)`);
+ if(n.r>=8)r.push(n.r===10?'pluie fine':'temps sec après averse');
+ return r.concat(x.bo)}
+function openSI(){show('sci');if(!SI&&MT)SI=MT;drawSIchips();if(SI)loadSI()}
+function drawSIchips(){
+ $('sispots').innerHTML=spots.map(x=>`<span class="chip ${SI&&SI.id===x.id?'on':''}" data-id="${x.id}">📍 ${e(x.nom)}</span>`).join('');
+ $('sidays').innerHTML=SJ?SJ.daily.time.slice(1).map((d,i)=>`<span class="chip ${i===SD?'on':''}" data-d="${i}">${i?i===1?'Demain':new Date(d+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'}):'Aujourd’hui'}</span>`).join(''):'';
+}
+function setSI(c){SI=c;SD=0;SJ=null;SV('cp_si',c);drawSIchips();loadSI()}
+$('nsi').onclick=openSI;
+$('sispots').onclick=ev=>{const c=ev.target.closest('[data-id]');if(!c)return;const x=spots.find(y=>y.id===c.dataset.id);setSI({id:x.id,name:x.nom,lat:x.lat,lon:x.lon})};
+$('sidays').onclick=ev=>{const c=ev.target.closest('[data-d]');if(c){SD=+c.dataset.d;drawSIchips();drawSI()}};
+$('sigo').onclick=()=>search('sicity','sires',g=>setSI({name:g.name,lat:g.lat,lon:g.lon}));
+$('sicity').onkeydown=ev=>{if(ev.key==='Enter')$('sigo').click()};
+async function loadSI(){
+ const tok=SI;$('siout').innerHTML='<div class="hint">Calcul des indices…</div>';
+ try{const j=await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${SI.lat}&longitude=${SI.lon}&hourly=temperature_2m,pressure_msl,wind_speed_10m,wind_direction_10m,cloud_cover,precipitation,weather_code&daily=sunrise,sunset&wind_speed_unit=kmh&past_days=1&forecast_days=7&timezone=auto`)).json();
+  if(tok!==SI)return;SJ=j;drawSIchips();drawSI()}
+ catch(_){$('siout').innerHTML='<div class="note">Impossible de charger les données (connexion ?).</div>'}
+}
+function drawSI(){
+ const r=dayScores(SJ,SD+1),o=r.off,legal=r.st.filter(x=>x.legal),avg=legal.reduce((a,x)=>a+x.s,0)/(legal.length||1);
+ const pool=legal.filter(x=>SD>0||x.t+SM>Date.now());let best=null;
+ if(pool.length){const n=Math.min(8,pool.length);for(let a=0;a+n<=pool.length;a++){const w=pool.slice(a,a+n),m=w.reduce((x,y)=>x+y.s,0)/n;if(!best||m>best.m)best={w,m}}}
+ let hero='<div class="note">Plus aucun créneau de pêche autorisé aujourd’hui : choisis un autre jour.</div>',pk=null;
+ if(best){const w=best.w;pk=w.reduce((a,b)=>b.s>a.s?b:a);const a=Math.max(w[0].t,r.lo),b=Math.min(w[w.length-1].t+SM,r.hi),nm={s:'Luminosité',p:'Pression',l:'Lune',v:'Vent',r:'Pluie'};
+  hero=`<div class="hero"><small>Meilleur indice${SD?'':' · à venir'}</small><div class="num">${hm(a,o)} – ${hm(b,o)}</div><div style="color:var(--mut);margin-top:4px">Indice ${best.m.toFixed(1)} / 10 · pic à ${hm(pk.t,o)} (${pk.s.toFixed(1)})</div></div>
+  <div class="recap">${whySI(pk,r.sr,r.ss).map(x=>`<span class="chip">${e(x)}</span>`).join('')}</div>
+  <div class="hint" style="text-align:left">Notes au pic : ${Object.keys(nm).map(k=>nm[k]+' '+pk.n[k]+'/10').join(' · ')}</div>`}
+ const mp=Math.round(r.ph.p*8)%8,mr=r.mr[0],ms=r.ms[0],c=(t,v)=>`<div class="cell"><small>${t}</small><div class="num sm">${v}</div></div>`;
+ const ce=(x,v)=>`<td class="${x.lg?'':'off'}">${v}</td>`,row=(l,f)=>`<tr><td>${l}</td>${r.hr.map(f).join('')}</tr>`;
+ const tb=`<table class="sit">${row('Heure',x=>ce(x,x.k+'h'))}${row('Ciel',x=>ce(x,wmh(x.C,x.dy?1:0)[0]))}${row('Temp.',x=>ce(x,Math.round(x.T)+'°'))}${row('Vent',x=>ce(x,Math.round(x.V)+'<br><span style="display:inline-block;transform:rotate('+(x.D+180)+'deg)">↑</span>'))}${row('hPa',x=>ce(x,Math.round(x.P)))}${row('Pluie',x=>ce(x,x.R?x.R.toFixed(1):'–'))}${row('Indice',x=>`<td class="${x.lg?'':'off'}"><div class="ix" style="background:hsl(${Math.round(x.s*12)} 65% 38%)">${x.s.toFixed(1)}</div></td>`)}</table>`;
+ $('siout').innerHTML=`<div style="color:var(--mut);margin-bottom:8px">📍 ${e(SI.name)}</div>${hero}
+ <div class="grid">${c('Indice du jour',avg.toFixed(1)+' / 10 · '+ql(avg))}${c('Pêche autorisée',hm(r.lo,o)+' → '+hm(r.hi,o))}${c('Soleil','☀️ '+hm(r.sr,o)+' → '+hm(r.ss,o))}${c('Lune',['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘'][mp]+' '+Math.round(r.ph.f*100)+' % · ↑ '+(mr?hm(mr,o):'–')+' ↓ '+(ms?hm(ms,o):'–'))}</div>
+ <div class="cbox sc" id="sisc" style="padding:8px">${tb}</div>
+ <div class="hint" style="text-align:left">Heures grisées = pêche interdite (plus de 30 min avant le lever ou après le coucher du soleil, art. R436-13). Exceptions locales possibles : vérifie les arrêtés de ton département.</div>`;
+ if(pk)$('sisc').scrollLeft=Math.max(0,new Date(pk.t+o*1e3).getUTCHours()*46-60);
+}
+</script></body></html>
