@@ -129,7 +129,7 @@ const EAU=[["Claire","💧","Claire"],["Teintée / Thé","🍵","Teintée"],["Tr
 const VENT=[["Faible","🍃","Faible / calme","0–10 km/h"],["Modéré","🌬️","Modéré","10–25 km/h"],["Fort","💨","Fort","+25 km/h"]];
 const PRES=[["Baisse modérée","↘️","Baisse modérée"],["Chute brutale","⬇️","Chute brutale"],["Stable","➡️","Stable"],["Hausse","↗️","Hausse"]];
 const FISH=[["Truite","🐟","Truite"],["Brochet","🐊","Brochet"],["Sandre","👁️","Sandre"],["Perche","🐠","Perche"]];
-const LEU=[...new Set(Object.values(M).map(r=>r.l))].map(l=>[l,"",l]);
+const LEU=[...new Set([...Object.values(M).map(r=>r.l),"Lame vibrante"])].map(l=>[l,"",l]);
 const ANI=[["Lente","🐢","Lente"],["Moyenne","🚶","Moyenne"],["Rapide","⚡","Rapide"]];
 const DIR=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"].map(d=>[d,"",d]);
 const LAB={ciel:SKY,eau:EAU,vent:VENT,pression:PRES};
@@ -138,7 +138,7 @@ const SORTIE={steps:[
  {k:"ciel",t:"La météo",o:SKYA},{k:"loc",t:"Localisation",type:"loc",skip:()=>S.ciel!=='Auto'},{k:"eau",t:"Couleur de l’eau",o:EAU},{k:"vent",t:"Force du vent",o:VENT,skip:()=>S.ciel==='Auto'},{k:"pression",t:"Tendance de pression",o:PRES,skip:()=>S.ciel==='Auto'}],done:()=>result()};
 const FISHON={steps:[
  {k:"poisson",t:"Type de poisson",o:FISH},{k:"mesure",t:"Taille et poids",type:"mesure"},{k:"spot",t:"Le spot",o:()=>[...spots.map(x=>[x.id,"📍",x.nom,"Météo auto"]),["","➖","Sans spot","Saisie manuelle"]]},{k:"poste",t:"Le poste",type:"text",ph:"Ex : Ponton nord, pointe des roseaux"},{k:"dt",t:"Date et heure de la prise",type:"dt"},{k:"leurre",t:"Leurre utilisé",o:LEU,cls:"two"},{k:"anim",t:"Animation",o:ANI},
- {k:"couleur",t:"Couleur du leurre",type:"text",ph:"Ex : Chartreuse, Fire Tiger, Ayu"},
+ {k:"couleur",t:"Couleur du leurre",type:"text",ph:"Ex : Chartreuse, Fire tiger, Ayu"},
   {k:"ref",t:"Référence du leurre",type:"text",ph:"Ex : Caperlan Shad ROGEN 200 TP7Gr"},
  {k:"hpa",t:"Pression atmosphérique (hPa)",type:"text",ph:"Ex : 1015",im:"decimal"},
  {k:"ciel",t:"La météo",o:SKY},
@@ -258,8 +258,18 @@ function resultAdvV2(){
  let zone=hab&&hab!=='unknown'&&ctx.where[hab]?ctx.where[hab]:r.zo;
  if(depth!=='unknown'){const dp={surface:'Commence dans la couche 0–1 m; vérifie les chasses avant de rester en surface.',shallow:'Teste 1–2,5 m et les bordures; fais varier la profondeur par paliers.',mid:'Explore 2,5–5 m en gardant le leurre dans la zone visée.',deep:'Cherche les zones profondes uniquement si température, saison et fourrage le justifient.'};zone+=' '+dp[depth]}
  if(current==='strong'&&species==='Truite')zone+=' Cherche aussi les bordures de veine et les amortis; évite de pêcher toute la veine à vitesse identique.';
- const lure=forage!=='unknown'&&ctx.lures[forage]?ctx.lures[forage]:r.fa+' — '+r.tc;
+ const season=String(S.sai||'');
+ // La lame vibrante est surtout proposée aux percidés, ou au brochet quand on cible le fourrage en profondeur.
+ const bladeFit=(['Perche','Sandre'].includes(species) && (['mid','deep'].includes(depth)||activity==='bottom'||['2','3'].includes(season)||hab==='drop'||hab==='open')) || (species==='Brochet' && ['mid','deep'].includes(depth) && forage==='fry' && ['drop','open'].includes(hab));
+ let lure=forage!=='unknown'&&ctx.lures[forage]?ctx.lures[forage]:r.fa+' — '+r.tc;
+ if(bladeFit){
+   const bladeSize=species==='Perche'?'4–6 cm':species==='Sandre'?'5–7 cm':'6–9 cm';
+   lure=`Lame vibrante compacte (${bladeSize})`;
+   animation=activity==='hunt'?'Lancer-ramener régulier avec quelques accélérations; garde la lame dans la couche où chassent les poissons.':'Laisse couler à la profondeur visée, puis effectue de courtes tirées et contrôle la descente; alterne avec un linéaire lent.';
+   tech='Leurre métallique dense · prospection vibrante / dent-de-scie';
+ }
  const alternatives=[];
+ if(bladeFit)alternatives.push('Lame vibrante : commence par des tirées courtes et une descente contrôlée. Elle coule vite et peut s’accrocher près des branches, herbiers denses ou rochers; sur un fond encombré, privilégie une présentation décollée du fond.');
  if(activity==='follow')alternatives.push('Réduis la taille ou passe à un profil plus discret.');
  if(activity==='inactive')alternatives.push('Change d’angle et de profondeur avant de changer trois fois de couleur.');
  if(activity==='hunt')alternatives.push('Si les attaques ratent, ralentis et allonge les pauses.');
