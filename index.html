@@ -106,6 +106,7 @@ textarea:focus{outline:0;border-color:var(--red)}
  <div class="srch"><input id="mq" placeholder="Aller à une ville…" autocomplete="off"><button class="btn" id="mgo">OK</button><button class="btn ghost" id="loc" aria-label="Ma position">📍</button></div>
  <div id="mres"></div><div id="lmap"></div>
  <div class="cbox hide" id="spform"><input id="spn" maxlength="40" placeholder="Nom du spot (ex : Ponton nord)"><div class="nav" style="grid-template-columns:2fr 1fr;margin-top:10px"><button class="btn alt" id="sps">Enregistrer</button><button class="btn ghost" id="spc">Annuler</button></div></div>
+ <div class="cbox hide" id="stform"><b id="stt" style="display:block;margin-bottom:8px"></b><select id="stsel" style="width:100%;padding:10px;border-radius:10px;background:var(--card);color:var(--tx);border:1px solid var(--line);font-size:14px"></select><div class="chips" id="stg" style="margin:8px 0 0"></div><div class="hint" id="stp" style="text-align:left"></div><div class="nav" style="grid-template-columns:2fr 1fr;margin-top:6px"><button class="btn alt" id="stok">Enregistrer</button><button class="btn ghost" id="stx">Fermer</button></div></div>
  <div class="hint" id="mh">Touche la carte pour ajouter un spot de pêche.</div></section>
 <section class="screen" id="sci"><div class="hd"><button class="back" data-home>‹</button><h2 style="font-size:26px">Score indice météo</h2></div>
  <div class="srch"><input id="sicity" placeholder="Ville du spot…" autocomplete="off"><button class="btn" id="sigo">OK</button></div>
@@ -383,7 +384,7 @@ function fishRes(){
  <div class="cell"><small>Température</small><div class="num">${u(S.temp,'°C')}</div></div>
  <div class="cell"><small>Pression</small><div class="num">${u(S.hpa,'hPa')}</div></div>
  <div class="cell"><small>Vent</small><div class="num">${e(S.dir)} · ${u(S.ventf,'km/h')}</div></div>
- <div class="cell w"><small>Débit / hauteur d’eau</small><div class="num">💧 ${v(S.debit)}</div>${S.station&&/m³/.test(S.debit||'')?`<small style="display:block;text-transform:none;letter-spacing:0;font:400 13px Inter;margin-top:2px">${e(S.station)}</small>`:''}</div><div class="cell w"><small>Commentaires</small><div class="cmt">${v(S.note)}</div></div></div>
+ <div class="cell w"><small>Débit / hauteur d’eau</small><div class="num">💧 ${v(S.debit)}</div>${S.station&&S.debit&&S.debit===S.dbAuto?`<small style="display:block;text-transform:none;letter-spacing:0;font:400 13px Inter;margin-top:2px">${e(S.station)}</small>`:''}</div><div class="cell w"><small>Commentaires</small><div class="cmt">${v(S.note)}</div></div></div>
  <div class="brand">🎣 Compagnon Pêche</div></div>
  <div class="hint">✅ Prise enregistrée dans ton carnet.</div>
  <div class="acts"><button class="btn alt" id="again2">Nouvelle prise</button><button class="btn ghost" id="lg2">Voir le carnet</button><button class="btn ghost" id="h2">Accueil</button></div>`;
@@ -425,10 +426,14 @@ async function getStationsProches(lat,lon){
   return stC[k]=(j.data||[]).filter(x=>x.en_service!==false&&x.latitude_station!=null&&!/supprim/i.test(x.libelle_station||'')).map(x=>({c:x.code_station,n:x.libelle_station,d:km(lat,lon,x.latitude_station,x.longitude_station)})).sort((a,b)=>a.d-b.d)}catch(_){return[]}
 }
 const orderSt=(l,sp)=>sp&&sp.sc?[...l.filter(x=>x.c===sp.sc),...l.filter(x=>x.c!==sp.sc)]:l;
-async function getMesuresStation(c,q='size=192'){
- try{const j=await(await fetch(`${HB}observations_tr?code_entite=${c}&grandeur_hydro=Q&sort=desc&${q}`)).json();return j.data||[]}catch(_){return[]}
+async function getMesuresStation(c,q='size=192',g='Q'){
+ try{const j=await(await fetch(`${HB}observations_tr?code_entite=${c}&grandeur_hydro=${g}&sort=desc&${q}`)).json();return j.data||[]}catch(_){return[]}
 }
-async function stationAvecDebit(lat,lon,sp,q){for(const st of orderSt(await getStationsProches(lat,lon),sp).slice(0,6)){const d=await getMesuresStation(st.c,q);if(d.length)return{st,d}}return null}
+async function stationAvecDebit(lat,lon,sp,q){
+ const L=orderSt(await getStationsProches(lat,lon),sp).slice(0,6),gs=sp&&sp.sg?[sp.sg]:['Q','H'];
+ for(const g of gs)for(const st of L){const d=await getMesuresStation(st.c,q,g);if(d.length)return{st,d,g}}
+ return null}
+const fm=(g,x)=>g==='H'?(x/1000).toFixed(2)+' m':fq(x/1000)+' m³/s';
 
 document.querySelectorAll('[data-home]').forEach(b=>b.onclick=()=>show('home'));
 $('nmet').onclick=openMeteo;$('nmap').onclick=openMap;$('nlog').onclick=openLog;
@@ -465,7 +470,7 @@ async function autoMeteo(){
   S.debit=S.station='';const t=new Date(S.date+'T'+(S.time||'12:00'));
   if(t<Date.now()&&Date.now()-t<29*864e5){
    const z=x=>new Date(x).toISOString().slice(0,19)+'Z',r=await stationAvecDebit(sp.lat,sp.lon,sp,`size=6&date_debut_obs=${z(t-72e5)}&date_fin_obs=${z(+t+9e5)}`);
-   if(r){S.debit=fq(r.d[0].resultat_obs/1000)+' m³/s';S.station=r.st.n}
+   if(r){S.debit=fm(r.g,r.d[0].resultat_obs);S.dbAuto=S.debit;S.station=r.st.n}
   }
  }catch(_){}
  nx.disabled=false;
@@ -519,26 +524,30 @@ async function loadMeteo(){
 }
 
 let c4;
-async function meteoDebit(lat,lon,id,code){
+async function meteoDebit(lat,lon,id,code,gr,forced){
  const tok=MT;if(!tok)return;const sp=spots.find(x=>x.id===id);
  try{
   const sts=await getStationsProches(lat,lon);
   if(tok!==MT||!$('dtxt'))return;
-  if(!sts.length){$('dtxt').textContent='💧 Aucune station de débit à moins de 40 km.';$('c4').parentNode.classList.add('hide');return}
+  if(!sts.length){$('dtxt').textContent='💧 Aucune station à moins de 40 km.';$('c4').parentNode.classList.add('hide');return}
   const sel=[code,sp&&sp.sc].find(c=>c&&sts.some(x=>x.c===c))||sts[0].c;
-  $('dselect').innerHTML=`<select id="stSelect" style="width:100%;padding:10px;border-radius:10px;background:var(--card);color:var(--tx);border:1px solid var(--line);font-size:14px">`+sts.map(x=>`<option value="${x.c}" ${x.c===sel?'selected':''}>${e(x.n)} (${x.d.toFixed(1)} km)</option>`).join('')+'</select>';
-  $('stSelect').onchange=ev=>{if(sp){sp.sc=ev.target.value;SV('cp_spots',spots)}meteoDebit(lat,lon,id,ev.target.value)};
+  let g=gr||(sp&&sp.sg)||'Q',note='';
+  const chip=(v,l)=>`<span class="chip ${g===v?'on':''}" data-g="${v}">${l}</span>`;
+  $('dselect').innerHTML=`<select id="stSelect" style="width:100%;padding:10px;border-radius:10px;background:var(--card);color:var(--tx);border:1px solid var(--line);font-size:14px">`+sts.map(x=>`<option value="${x.c}" ${x.c===sel?'selected':''}>${e(x.n)} (${x.d.toFixed(1)} km)</option>`).join('')+`</select><div class="chips" style="margin:8px 0 0">${chip('Q','💧 Débit')}${chip('H','📏 Hauteur d’eau')}</div>`;
+  $('stSelect').onchange=ev=>{if(sp){sp.sc=ev.target.value;SV('cp_spots',spots)}meteoDebit(lat,lon,id,ev.target.value,forced?g:undefined,forced)};
+  $('dselect').querySelectorAll('[data-g]').forEach(c=>c.onclick=()=>{if(sp){sp.sc=sel;sp.sg=c.dataset.g;SV('cp_spots',spots)}meteoDebit(lat,lon,id,sel,c.dataset.g,true)});
   if(c4){c4.destroy();c4=null}
-  $('dtxt').textContent='💧 Chargement…';
-  const d=await getMesuresStation(sel);
+  $('dtxt').textContent='Chargement…';
+  let d=await getMesuresStation(sel,'size=192',g);
+  if(!d.length&&!forced){const g2=g==='Q'?'H':'Q',d2=await getMesuresStation(sel,'size=192',g2);if(d2.length){d=d2;g=g2;note=`Cette station ne mesure que ${g==='H'?'la hauteur d’eau':'le débit'}.`;$('dselect').querySelectorAll('[data-g]').forEach(c=>c.classList.toggle('on',c.dataset.g===g))}}
   if(tok!==MT||!$('dtxt'))return;
   const box=$('c4').parentNode;
-  if(!d.length){$('dtxt').textContent='💧 Pas de mesure de débit pour cette station (hauteur seule ?). Essaie-en une autre.';box.classList.add('hide');return}
+  if(!d.length){$('dtxt').textContent=`${g==='H'?'📏':'💧'} Pas de mesure de ${g==='H'?'hauteur':'débit'} pour cette station. Essaie l’autre mesure ou une autre station.`;box.classList.add('hide');return}
   box.classList.remove('hide');
-  const q=d[0].resultat_obs/1000,o=d.find(x=>new Date(x.date_obs)<=new Date(d[0].date_obs)-108e5),k=o?q/(o.resultat_obs/1000):1,r=[...d].reverse();
-  $('dtxt').innerHTML=`💧 <b>${fq(q)} m³/s</b> ${k>1.05?'↗ en hausse':k<.95?'↘ en baisse':'➡ stable'} · ${e(sts.find(x=>x.c===sel).n)}`;
-  c4=new Chart($('c4'),{type:'line',data:{labels:r.map(x=>x.date_obs),datasets:[{data:r.map(x=>x.resultat_obs/1000),borderColor:'#2b9cff',backgroundColor:'#2b9cff22',fill:true,pointRadius:0,tension:.3,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>new Date(r[i[0].dataIndex].date_obs).toLocaleString('fr-FR',{weekday:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}),label:c=>c.parsed.y.toFixed(2)+' m³/s'}}},scales:{x:{ticks:{autoSkip:false,maxRotation:0,color:'#9aa3b2',callback:v=>new Date(r[v].date_obs).getMinutes()?'':tl(r[v].date_obs)},grid:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#9aa3b2'},grid:{color:'rgba(255,255,255,.08)'}}}}});
- }catch(_){if(tok===MT&&$('dtxt'))$('dtxt').textContent='💧 Débit indisponible pour le moment.'}
+  const ic=g==='H'?'📏':'💧',u=g==='H'?' m':' m³/s',th=g==='H'?.02:.05,q=d[0].resultat_obs/1000,o=d.find(x=>new Date(x.date_obs)<=new Date(d[0].date_obs)-108e5),k=o?q/(o.resultat_obs/1000):1,r=[...d].reverse();
+  $('dtxt').innerHTML=`${ic} <b>${fm(g,d[0].resultat_obs)}</b> ${k>1+th?'↗ en hausse':k<1-th?'↘ en baisse':'➡ stable'} · ${e(sts.find(x=>x.c===sel).n)}${note?`<div class="hint" style="text-align:left">${note}</div>`:''}${sp?`<div class="hint" style="text-align:left">✓ Station et mesure enregistrées par défaut pour « ${e(sp.nom)} » dès que tu les changes.</div>`:''}`;
+  c4=new Chart($('c4'),{type:'line',data:{labels:r.map(x=>x.date_obs),datasets:[{data:r.map(x=>x.resultat_obs/1000),borderColor:'#2b9cff',backgroundColor:'#2b9cff22',fill:true,pointRadius:0,tension:.3,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>new Date(r[i[0].dataIndex].date_obs).toLocaleString('fr-FR',{weekday:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}),label:c=>c.parsed.y.toFixed(2)+u}}},scales:{x:{ticks:{autoSkip:false,maxRotation:0,color:'#9aa3b2',callback:v=>new Date(r[v].date_obs).getMinutes()?'':tl(r[v].date_obs)},grid:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#9aa3b2'},grid:{color:'rgba(255,255,255,.08)'}}}}});
+ }catch(_){if(tok===MT&&$('dtxt'))$('dtxt').textContent='💧 Mesure indisponible pour le moment.'}
 }
 
 /* ===== Écran Carte / Spots ===== */
@@ -556,18 +565,39 @@ function openMap(){
 function drawSpots(){
  LG.clearLayers();
  spots.forEach(x=>{const n=prises.filter(p=>p.spot===x.id).length;
-  L.marker([x.lat,x.lon],{icon:PIN}).addTo(LG).bindPopup(`<b>🎣 ${e(x.nom)}</b><br>${n} prise${n>1?'s':''}<div id="pd${x.id}" style="margin:6px 0;max-width:210px">💧 débit…</div><a href="#" onclick="return spotMeteo('${x.id}')">☁️ Météo</a> · <a href="#" onclick="return delSpot('${x.id}',this)">🗑️ Supprimer</a>`).on('popupopen',async()=>{
+  L.marker([x.lat,x.lon],{icon:PIN}).addTo(LG).bindPopup(`<b>🎣 ${e(x.nom)}</b><br>${n} prise${n>1?'s':''}<div id="pd${x.id}" style="margin:6px 0;max-width:210px">💧 débit…</div><a href="#" onclick="return spotMeteo('${x.id}')">☁️ Météo</a> · <a href="#" onclick="return spotStation('${x.id}')">💧 Station</a> · <a href="#" onclick="return delSpot('${x.id}',this)">🗑️ Supprimer</a>`).on('popupopen',async()=>{
    const z=document.getElementById('pd'+x.id);
    try{
     const r=await stationAvecDebit(x.lat,x.lon,x,'size=24');
-    z.innerHTML=r?`💧 <b>${fq(r.d[0].resultat_obs/1000)} m³/s</b><br><small>${e(r.st.n)}</small>`:'💧 Pas de station avec mesure de débit à proximité';
+    z.innerHTML=r?`${r.g==='H'?'📏':'💧'} <b>${fm(r.g,r.d[0].resultat_obs)}</b><br><small>${e(r.st.n)}</small>`:'💧 Pas de station avec mesure à proximité';
    }catch(_){z.textContent='💧 Débit indisponible'}})});
 }
 function spotMeteo(id){const x=spots.find(y=>y.id===id);MT={id:x.id,name:x.nom,lat:x.lat,lon:x.lon};SV('cp_city',MT);openMeteo();return false}
 function delSpot(id,a){if(!a.dataset.arm){a.dataset.arm=1;a.textContent='⚠️ Confirmer ?';return false}spots=spots.filter(x=>x.id!==id);SV('cp_spots',spots);LM.closePopup();drawSpots();return false}
+let SPT=null,SGT='Q',STK=0,STF=false;
+async function stAuto(c){if(STF)return;const q=await getMesuresStation(c,'size=1','Q');if(q.length){SGT='Q'}else if((await getMesuresStation(c,'size=1','H')).length)SGT='H';stG()}
+function spotStation(id){stOpen(id);return false}
+async function stOpen(id){
+ SPT=spots.find(x=>x.id===id);if(!SPT)return;LM.closePopup();SGT=SPT.sg||'Q';STF=!!SPT.sg;
+ $('stform').classList.remove('hide');$('mh').classList.add('hide');$('stt').textContent='💧 Station par défaut · '+SPT.nom;$('stp').textContent='';
+ $('stsel').innerHTML='<option>Recherche des stations…</option>';
+ const sts=await getStationsProches(SPT.lat,SPT.lon);
+ if(!sts.length){$('stsel').innerHTML='<option value="">Aucune station à moins de 40 km</option>';$('stg').innerHTML='';return}
+ const cur=sts.some(x=>x.c===SPT.sc)?SPT.sc:sts[0].c;
+ $('stsel').innerHTML=sts.map(x=>`<option value="${x.c}" ${x.c===cur?'selected':''}>${e(x.n)} (${x.d.toFixed(1)} km)</option>`).join('');
+ $('stsel').onchange=async()=>{await stAuto($('stsel').value);stPrev()};stG();await stAuto(cur);stPrev();
+}
+function stG(){$('stg').innerHTML=`<span class="chip ${SGT==='Q'?'on':''}" data-g="Q">💧 Débit</span><span class="chip ${SGT==='H'?'on':''}" data-g="H">📏 Hauteur d’eau (lac, étang…)</span>`;$('stg').onclick=ev=>{const c=ev.target.closest('[data-g]');if(c){STF=true;SGT=c.dataset.g;stG();stPrev()}}}
+async function stPrev(){
+ const t=++STK,c=$('stsel').value;if(!c)return;$('stp').textContent='Aperçu…';
+ const d=await getMesuresStation(c,'size=1',SGT);if(t!==STK)return;
+ $('stp').textContent=d.length?`Mesure actuelle : ${fm(SGT,d[0].resultat_obs)}`:`⚠️ Cette station ne fournit pas la ${SGT==='H'?'hauteur d’eau':'mesure de débit'}. Essaie l’autre mesure ou une autre station.`;
+}
+$('stok').onclick=()=>{if(!SPT||!$('stsel').value)return;SPT.sc=$('stsel').value;SPT.sg=SGT;SV('cp_spots',spots);toast('Station enregistrée pour '+SPT.nom);$('stform').classList.add('hide');$('mh').classList.remove('hide')};
+$('stx').onclick=()=>{$('stform').classList.add('hide');$('mh').classList.remove('hide')};
 function endForm(){$('spform').classList.add('hide');$('mh').classList.remove('hide');if(PM){PM.remove();PM=null}}
 $('spc').onclick=endForm;
-$('sps').onclick=()=>{const nom=$('spn').value.trim();if(!nom||!PEND)return;spots.push({id:'s'+Date.now(),nom,lat:+PEND.lat.toFixed(5),lon:+PEND.lng.toFixed(5)});if(!SV('cp_spots',spots))toast('Stockage plein');endForm();drawSpots()};
+$('sps').onclick=()=>{const nom=$('spn').value.trim();if(!nom||!PEND)return;const ns={id:'s'+Date.now(),nom,lat:+PEND.lat.toFixed(5),lon:+PEND.lng.toFixed(5)};spots.push(ns);if(!SV('cp_spots',spots))toast('Stockage plein');endForm();drawSpots();spotStation(ns.id)};
 $('mgo').onclick=()=>search('mq','mres',g=>LM.setView([g.lat,g.lon],12));
 $('mq').onkeydown=ev=>{if(ev.key==='Enter')$('mgo').click()};
 $('loc').onclick=()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>LM.setView([p.coords.latitude,p.coords.longitude],14),()=>toast('Position indisponible')):0;
