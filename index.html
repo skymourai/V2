@@ -167,6 +167,7 @@ const ADV={steps:[
  {k:"modeV2",t:"Comment renseigner les conditions ?",o:[["auto","📡","Automatique","Je choisis le spot, la météo est récupérée automatiquement"],["manual","✍️","Manuel","Je renseigne moi-même la météo"]]},
  {k:"esp",t:"Espèce ciblée",o:ESP},
  {k:"loc",t:"Choisis ton spot pour récupérer la météo",type:"loc",skip:()=>S.modeV2!=="auto"},
+ {k:"dday",t:"Date de la sortie",type:"dday",skip:()=>S.modeV2!=="auto"},
  {k:"sai",t:"Saison",o:SAI,skip:()=>S.modeV2==="auto"},
  {k:"teau",t:"Température de l’eau",o:TEA,skip:()=>S.modeV2==="auto"},
  {k:"pres",t:"Tendance de pression",o:PRB,skip:()=>S.modeV2==="auto"},
@@ -217,7 +218,7 @@ function resultAdv(){
  ${pc<60?`<div class="note">⚠️ La matrice n’a pas de fiche proche de ta situation pour cette espèce : prends ceci comme une base et adapte-la.</div>`:bad.length?`<div class="note">ℹ️ Fiche la plus proche de tes conditions. Écarts avec ${bad.join(', ')} : adapte le poids du leurre et ta présentation.</div>`:''}
  <div class="hint" style="text-align:left">Fiche ${r.id} · ${e(r.rs)} · ${e(r.rt)} · ${e(r.rp)} · ${e(r.rk)}</div>
  <div class="acts"><button class="btn" id="again">Nouvelle sortie avancée</button><button class="btn ghost" id="edit">Modifier les conditions</button><button class="btn ghost" id="h1">Accueil</button></div>`;
- show('res');$('again').onclick=()=>start(ADV);$('h1').onclick=()=>show('home');$('edit').onclick=()=>{st=ADV.steps.length-1;F=ADV;show('wiz');render()};
+ show('res');$('again').onclick=()=>start(ADV);$('h1').onclick=()=>show('home');$('edit').onclick=()=>{F=ADV;st=VS().length-1;show('wiz');render()};
 }
 /* ===== Moteur de recommandation V2 ===== */
 const V2W={sa:2.4,te:3.2,pr:.45,sk:1.35,ea:2.4,ve:1.1,pp:.65};
@@ -291,13 +292,13 @@ function resultAdvV2(){
  ${B?`<div class="cbox v2section"><h3>Option B</h3><div class="num">${e(B.r.fa)}</div><div class="v2text">${e(B.r.co)} · ${e(B.r.st)} · ${e(B.r.an)}</div></div>`:''}
  <div class="hint" style="text-align:left">Fiche de référence ${e(r.id)} · ${e(r.rs)} · ${e(r.rt)}. Matrice actuelle : ${rows.length} fiche(s) pour ${e(species)}; si la situation est peu documentée, la recommandation reste indicative.</div>
  <div class="acts"><button class="btn" id="again">Nouvelle sortie V2</button><button class="btn ghost" id="edit">Modifier les conditions</button><button class="btn ghost" id="h1">Accueil</button></div>`;
- show('res');$('again').onclick=()=>start(ADV);$('h1').onclick=()=>show('home');$('edit').onclick=()=>{st=ADV.steps.length-1;F=ADV;show('wiz');render()};
+ show('res');$('again').onclick=()=>start(ADV);$('h1').onclick=()=>show('home');$('edit').onclick=()=>{F=ADV;st=VS().length-1;show('wiz');render()};
 }
 ADV.done=()=>resultAdvV2();
 
 /* ===== Sortie : mode météo automatique ===== */
 const VS=()=>F.steps.filter(x=>!x.skip||!x.skip());
-const autoNote=()=>S.autoOK?`<div class="note">📍 ${e(S.locName)}<br>📡 Conditions détectées : ${e(S.autoTxt)}</div>`:'';
+const autoNote=()=>S.autoOK?`<div class="note">📍 ${e(S.locName)}<br>📡 Conditions ${S.adate?'prévues':'détectées'} : ${e(S.autoTxt)}</div>`:'';
 async function autoSortie(lat,lon){
  const h=(j=>{S.off=j.utc_offset_seconds;return j})(await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,pressure_msl,wind_speed_10m,cloud_cover,precipitation,weather_code&past_days=1&forecast_days=2&wind_speed_unit=kmh&timezone=auto`)).json()),H=h.hourly;
  const T=H.time.map(x=>Date.parse(x+':00Z')-S.off*1e3),n=Date.now();let i=0;while(i<T.length-1&&T[i+1]<=n)i++;
@@ -311,21 +312,45 @@ async function autoSortie(lat,lon){
  S.autoTxt=`${lab('ciel',S.cielA).toLowerCase()} · vent ${Math.round(V)} km/h (${lab('vent',S.vent).toLowerCase()}) · pression ${lab('pression',S.pression).toLowerCase()} (${dP>0?'+':''}${dP.toFixed(1)} hPa/3 h)`;
  S.autoOK=1;
 }
+/* ===== Stratégie avancée : météo prévue à une date (aujourd'hui → +7 jours) ===== */
+const dayOpts=()=>Array.from({length:8},(_,i)=>{const d=new Date(Date.now()+i*864e5),z=n=>String(n).padStart(2,'0');return[d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate()),d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}),i?i===1?'Demain':`Dans ${i} jours`:'Aujourd’hui']});
+async function autoDay(lat,lon,D,dl){
+ const j=await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,pressure_msl,wind_speed_10m,cloud_cover,precipitation,weather_code&daily=sunrise,sunset&wind_speed_unit=kmh&past_days=1&forecast_days=9&timezone=auto`)).json();
+ const H=j.hourly,di=((j.daily||{}).time||[]).indexOf(D);if(!H||di<0)throw 0;
+ const o=j.utc_offset_seconds,td=x=>Date.parse(x+':00Z')-o*1e3,T=H.time.map(td),lo=td(j.daily.sunrise[di])-18e5,hi=td(j.daily.sunset[di])+18e5,ix=[];
+ T.forEach((t,i)=>{if(i>=3&&t+36e5>lo&&t<hi)ix.push(i)});if(!ix.length)throw 0;
+ const m=a=>a.reduce((x,y)=>x+y,0)/a.length,P=H.pressure_msl,V=m(ix.map(i=>H.wind_speed_10m[i])),air=m(ix.map(i=>H.temperature_2m[i])),cl=m(ix.map(i=>H.cloud_cover[i]||0)),dP=m(ix.map(i=>P[i]-P[i-3])),pr=ix.map(i=>H.precipitation[i]||0),pt=pr.reduce((x,y)=>x+y,0),pm=Math.max(...pr),cd=Math.max(...ix.map(i=>H.weather_code[i]||0));
+ if([V,air,cl,dP].some(x=>!Number.isFinite(x)))throw 0;
+ S.autoAir=air;S.autoWind=V;S.autoCloud=cl;S.autoCode=cd;S.autoRain=pm;S.autoPressure=m(ix.map(i=>P[i]));S.autoDelta3=dP;
+ S.pression=dP<=-3?'Chute brutale':dP<=-1?'Baisse modérée':dP>=1?'Hausse':'Stable';
+ S.vent=V<10?'Faible':V<=25?'Modéré':'Fort';
+ S.cielA=cd>=95||pm>=2||(cl>=90&&pt>=.5)?'Orageux / Sombre':(cl>=60||pt>=1)?'Couvert':'Soleil';
+ S.autoTxt=`${dl} · ${lab('ciel',S.cielA).toLowerCase()} · vent moyen ${Math.round(V)} km/h (${lab('vent',S.vent).toLowerCase()}) · pression ${lab('pression',S.pression).toLowerCase()} (${dP>0?'+':''}${dP.toFixed(1)} hPa/3 h) · air ${Math.round(air)} °C`;
+ S.autoOK=1;
+}
+function applyAdv(name,D,dl){
+ const month=+D.slice(5,7);S.sai=String(month>=3&&month<=5?0:month>=6&&month<=8?1:month>=9&&month<=11?2:3);
+ S.sky=({'Soleil':'sun','Couvert':'veil','Orageux / Sombre':'rain'})[S.cielA]||'veil';
+ S.vent2=String(S.vent==='Faible'?0:S.vent==='Modéré'?1:2);
+ S.pres=S.pression==='Chute brutale'?'-2':S.pression==='Baisse modérée'?'-1':S.pression==='Hausse'?'1':'0';
+ // Température de l'air = indice saisonnier seulement, jamais présentée comme température d'eau mesurée.
+ const air=S.autoAir;let est=month>=6&&month<=8?1:month>=12||month<=2?0:1;
+ if(Number.isFinite(air)){if(air<7)est=0;else if(air>23&&month>=5&&month<=9)est=2;else if(air>=10&&air<=20)est=1}
+ S.teau=String(est);S.autoV2Note=`Météo prévue pour ${name}, ${dl}, pendant les heures de pêche autorisées. Saison calculée au calendrier; catégorie d’eau estimée à partir de la saison et de la température de l’air (${air.toFixed(1)} °C en moyenne). Ce n’est pas une mesure de température de l’eau.`;
+}
+function initDay(){
+ document.querySelectorAll('.opts .opt').forEach(b=>b.onclick=async()=>{
+  const D=b.dataset.d,dl=b.dataset.l,t=S.dTok=Date.now();document.querySelectorAll('.opts .opt').forEach(z=>z.classList.toggle('sel',z===b));S.adate=D;S.autoOK=0;
+  $('dnote').innerHTML='<div class="hint">Récupération de la météo prévue…</div>';
+  try{await autoDay(S.advLat,S.advLon,D,dl);if(S.dTok!==t)return;applyAdv(S.locName,D,dl);$('dnote').innerHTML=autoNote()+`<div class="hint">${e(S.autoV2Note)}</div>`}
+  catch(_){if(S.dTok!==t)return;S.autoOK=0;$('dnote').innerHTML='<div class="note">⚠️ Prévision indisponible pour cette date. Vérifie ta connexion ou choisis le mode manuel.</div>'}
+ });
+}
 function initLoc(){
- const pick=async(name,lat,lon,id)=>{const t=S.locTok=Date.now();S.autoOK=0;S.locName=name;S.locId=id||'';$('lcr').innerHTML='<div class="hint">Récupération de la météo…</div>';
-  try{await autoSortie(lat,lon);if(S.locTok!==t)return;
-   if(F===ADV){
-    const now=new Date(),month=now.getMonth()+1;S.sai=String(month>=3&&month<=5?0:month>=6&&month<=8?1:month>=9&&month<=11?2:3);
-    S.sky=({ 'Soleil':'sun','Couvert':'veil','Orageux / Sombre':'rain' })[S.cielA]||'veil';
-    S.vent2=String(S.vent==='Faible'?0:S.vent==='Modéré'?1:2);
-    S.pres=S.pression==='Chute brutale'?'-2':S.pression==='Baisse modérée'?'-1':S.pression==='Hausse'?'1':'0';
-    // Température de l'air = indice saisonnier seulement, jamais présentée comme température d'eau mesurée.
-    const air=S.autoAir;let est=month>=6&&month<=8?1:month>=12||month<=2?0:1;
-    if(Number.isFinite(air)){if(air<7)est=0;else if(air>23&&month>=5&&month<=9)est=2;else if(air>=10&&air<=20)est=1;}
-    S.teau=String(est);S.autoV2Note=`Météo récupérée pour ${name}. Saison calculée au calendrier; catégorie d’eau estimée à partir de la saison et de la température de l’air${Number.isFinite(air)?' ('+air.toFixed(1)+' °C)':''}. Ce n’est pas une mesure de température de l’eau.`;
-   }
-   $('lcr').innerHTML=autoNote()+(F===ADV?`<div class="hint">${e(S.autoV2Note)}</div>`:'')
-  }
+ const pick=async(name,lat,lon,id)=>{const t=S.locTok=Date.now();S.autoOK=0;S.locName=name;S.locId=id||'';
+  if(F===ADV){S.advLat=lat;S.advLon=lon;S.locOK=1;S.adate='';S.autoV2Note='';$('lcr').innerHTML=`<div class="note">📍 ${e(name)}<br>À l’étape suivante, tu choisis la date : la météo sera prévue pour ce jour-là.</div>`;return}
+  $('lcr').innerHTML='<div class="hint">Récupération de la météo…</div>';
+  try{await autoSortie(lat,lon);if(S.locTok!==t)return;$('lcr').innerHTML=autoNote()}
   catch(_){if(S.locTok!==t)return;S.autoOK=0;$('lcr').innerHTML='<div class="note">⚠️ Météo indisponible pour ce lieu. Vérifie ta connexion ou choisis la météo manuellement.</div>'}};
  $('lcg').onclick=()=>search('lci','lcr',g=>pick(g.name,g.lat,g.lon));
  $('lci').onkeydown=ev=>{if(ev.key==='Enter')$('lcg').click()};
@@ -340,19 +365,20 @@ function render(){
  else if(s.type==='dt'){if(!S.date){const n=new Date(),p=x=>String(x).padStart(2,'0');S.date=n.getFullYear()+'-'+p(n.getMonth()+1)+'-'+p(n.getDate());S.time=p(n.getHours())+':'+p(n.getMinutes())}h+=`<div class="dt"><label>Date<input id="d1" type="date" value="${S.date}"></label><label>Heure<input id="d2" type="time" value="${S.time}"></label></div>`}
  else if(s.type==='photo')h+=`<label class="btn ghost" style="display:block;text-align:center;margin-bottom:14px">📷 Prendre / choisir une photo<input id="ph" type="file" accept="image/*" hidden></label><img id="pv" class="pv ${S.photo?'':'hide'}" src="${S.photo||''}"><div class="hint">Optionnel · compressée pour ne pas encombrer ton stockage</div>`;
  else if(s.type==='mesure')h+=[['T','📏','Taille','cm','taille'],['P','⚖️','Poids','kg','poids']].map(([a,ic,l,u,k])=>`<label class="chkrow"><input type="checkbox" id="c${a}" ${S['c'+a]?'checked':''}><span>${ic} ${l}</span></label><input id="i${a}" inputmode="decimal" maxlength="8" placeholder="${l} en ${u}" value="${e(S[k])}" autocomplete="off" style="margin:-4px 0 12px;${S['c'+a]?'':'display:none'}">`).join('')+'<div class="hint">Coche ce que tu as mesuré · saisis seulement le nombre</div>';
- else if(s.type==='loc')h+=`<div class="srch"><input id="lci" placeholder="Ville, lac, rivière…" autocomplete="off"><button class="btn" id="lcg">OK</button></div><div id="lcr">${autoNote()}</div>${spots.length?'<div class="hint" style="text-align:left">Ou choisis un de tes spots :</div>':''}<div class="opts">${spots.map(x=>`<button class="opt ${S.locId===x.id?'sel':''}" data-id="${x.id}"><span class="ic">📍</span><div><b>${e(x.nom)}</b></div></button>`).join('')}</div>`;
+ else if(s.type==='dday')h+=`<div class="opts">${dayOpts().map(([v,l,sub])=>`<button class="opt ${S.adate===v?'sel':''}" data-d="${v}" data-l="${e(l)}"><span class="ic">📅</span><div><b>${e(l)}</b><small>${sub}</small></div></button>`).join('')}</div><div id="dnote">${S.autoOK&&S.adate?autoNote():''}</div>`;
+ else if(s.type==='loc')h+=`<div class="srch"><input id="lci" placeholder="Ville, lac, rivière…" autocomplete="off"><button class="btn" id="lcg">OK</button></div><div id="lcr">${F===ADV?(S.locOK?`<div class="note">📍 ${e(S.locName)}</div>`:''):autoNote()}</div>${spots.length?'<div class="hint" style="text-align:left">Ou choisis un de tes spots :</div>':''}<div class="opts">${spots.map(x=>`<button class="opt ${S.locId===x.id?'sel':''}" data-id="${x.id}"><span class="ic">📍</span><div><b>${e(x.nom)}</b></div></button>`).join('')}</div>`;
  else if(s.type==='area')h+=`<textarea id="inp" maxlength="300" placeholder="${e(s.ph)}">${e(S[s.k])}</textarea>`;
  else h+=`<div class="opts ${s.cls||''}">`+(typeof s.o==='function'?s.o():s.o).map(o=>`<button class="opt ${S[s.k]===o[0]?'sel':''}" data-v="${e(o[0])}"><span class="ic">${o[1]}</span><div><b>${o[2]}</b>${o[3]?`<span class="s">${o[3]}</span>`:''}</div></button>`).join('')+'</div>';
- if(S.auto&&['hpa','ciel','temp','dir','ventf'].includes(s.k))h+='<div class="hint">☁️ Pré-rempli par Open-Meteo, modifie si besoin.</div>';if(S.ciel==='Auto'&&S.autoOK&&s.k==='eau')h+=autoNote();$('q').innerHTML=h;
+ if(S.auto&&['hpa','ciel','temp','dir','ventf'].includes(s.k))h+='<div class="hint">☁️ Pré-rempli par Open-Meteo, modifie si besoin.</div>';if(S.ciel==='Auto'&&S.autoOK&&s.k==='eau')h+=autoNote();if(F===ADV&&S.modeV2==='auto'&&S.autoOK&&s.k==='eau2')h+=autoNote();$('q').innerHTML=h;
  const nx=$('next');nx.textContent=last?'Valider':'Continuer';nx.classList.add('hide');
- if(s.type){nx.classList.remove('hide');if(s.type==='dt'){$('d1').oninput=ev=>S.date=ev.target.value;$('d2').oninput=ev=>S.time=ev.target.value}else if(s.type==='photo')$('ph').onchange=pickPhoto;else if(s.type==='mesure')initMz();else if(s.type==='loc')initLoc();else $('inp').oninput=ev=>S[s.k]=ev.target.value}
+ if(s.type){nx.classList.remove('hide');if(s.type==='dt'){$('d1').oninput=ev=>S.date=ev.target.value;$('d2').oninput=ev=>S.time=ev.target.value}else if(s.type==='photo')$('ph').onchange=pickPhoto;else if(s.type==='mesure')initMz();else if(s.type==='loc')initLoc();else if(s.type==='dday')initDay();else $('inp').oninput=ev=>S[s.k]=ev.target.value}
  else{if(S[s.k])nx.classList.remove('hide');
   document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{S[s.k]=b.dataset.v;document.querySelectorAll('.opt').forEach(x=>x.classList.toggle('sel',x===b));
-   if(s.k==='modeV2'){S.autoOK=0;S.locName='';S.locId='';S.autoV2Note=''}if(s.k==='eau2'){S.clarte2=({clear:'clear',tint:'tint',mud:'mud',algae:'algae'})[S.eau2]||'unknown'}if(!last)setTimeout(()=>{st++;render()},220);else nx.classList.remove('hide')})}
+   if(s.k==='modeV2'){S.autoOK=0;S.locOK=0;S.adate='';S.locName='';S.locId='';S.autoV2Note=''}if(s.k==='eau2'){S.clarte2=({clear:'clear',tint:'tint',mud:'mud',algae:'algae'})[S.eau2]||'unknown'}if(!last)setTimeout(()=>{st++;render()},220);else nx.classList.remove('hide')})}
 }
 $('create').onclick=()=>start(SORTIE);$('adv').onclick=()=>start(ADV);
 $('fish').onclick=()=>start(FISHON);
-$('back').onclick=()=>{if(st>0){st--;render()}else show('home')};$('next').onclick=async()=>{const s=VS()[st];if(s.type==='loc'&&!S.autoOK)return toast('Choisis d’abord un lieu');if(s.type==='dt'&&F===FISHON)await autoMeteo();
+$('back').onclick=()=>{if(st>0){st--;render()}else show('home')};$('next').onclick=async()=>{const s=VS()[st];if(s.type==='loc'&&!(F===ADV?S.locOK:S.autoOK))return toast('Choisis d’abord un lieu');if(s.type==='dday'&&!S.autoOK)return toast('Choisis d’abord une date');if(s.type==='dt'&&F===FISHON)await autoMeteo();
  if(s.k==='id'&&!(S.id||'').trim())S.id='Sortie du '+new Date().toLocaleDateString('fr-FR');
  if(st<VS().length-1){st++;render()}else F.done()};
 function result(){
